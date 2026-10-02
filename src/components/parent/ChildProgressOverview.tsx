@@ -27,6 +27,7 @@ export const ChildProgressOverview: React.FC = () => {
   // Skills data matching IMOLE curriculum
   const skills = [
     {
+      id: 'mental-math-logic',
       name: 'Mental Math & Logic',
       percentage: progress.skills['mental-math-logic']?.challengesCompleted ? Math.min(100, progress.skills['mental-math-logic'].challengesCompleted * 25) : 75,
       barColor: 'bg-[#a73605]',
@@ -34,6 +35,7 @@ export const ChildProgressOverview: React.FC = () => {
       icon: '🧠',
     },
     {
+      id: 'persuasive-speaking',
       name: 'Persuasive Speaking',
       percentage: progress.skills['persuasive-speaking']?.challengesCompleted ? Math.min(100, progress.skills['persuasive-speaking'].challengesCompleted * 25) : 60,
       barColor: 'bg-[#eab308]',
@@ -41,6 +43,7 @@ export const ChildProgressOverview: React.FC = () => {
       icon: '🎤',
     },
     {
+      id: 'financial-literacy',
       name: 'Financial Literacy',
       percentage: progress.skills['financial-literacy']?.challengesCompleted ? Math.min(100, progress.skills['financial-literacy'].challengesCompleted * 25) : 80,
       barColor: 'bg-[#16a34a]',
@@ -48,6 +51,7 @@ export const ChildProgressOverview: React.FC = () => {
       icon: '💰',
     },
     {
+      id: 'creative-problem-solving',
       name: 'Creative Problem Solving',
       percentage: progress.skills['creative-problem-solving']?.challengesCompleted ? Math.min(100, progress.skills['creative-problem-solving'].challengesCompleted * 25) : 65,
       barColor: 'bg-[#0284c7]',
@@ -55,6 +59,7 @@ export const ChildProgressOverview: React.FC = () => {
       icon: '💡',
     },
     {
+      id: 'emotional-intelligence',
       name: 'Emotional Intelligence',
       percentage: progress.skills['emotional-intelligence']?.challengesCompleted ? Math.min(100, progress.skills['emotional-intelligence'].challengesCompleted * 25) : 50,
       barColor: 'bg-[#9333ea]',
@@ -157,10 +162,18 @@ export const ChildProgressOverview: React.FC = () => {
         </div>
 
         {/* Right: Quick Action Buttons on Desktop */}
-        <div className="flex flex-col sm:flex-row md:flex-col gap-2.5 w-full md:w-auto shrink-0">
+        <div className="flex flex-col sm:flex-row md:flex-col gap-2 w-full md:w-auto shrink-0">
+          <button
+            onClick={() => navigate('/parent/skills')}
+            className="py-2.5 px-4 rounded-2xl bg-[#a73605] hover:bg-[#8e2e04] active:scale-98 text-white font-bold text-xs sm:text-sm shadow-md shadow-[#a73605]/20 flex items-center justify-center gap-2 transition-all cursor-pointer"
+          >
+            <span>📊</span>
+            <span>Skill Breakdown</span>
+          </button>
+
           <button
             onClick={() => navigate('/parent/share')}
-            className="py-3 px-5 rounded-2xl bg-[#a73605] hover:bg-[#8e2e04] active:scale-98 text-white font-bold text-xs sm:text-sm shadow-md shadow-[#a73605]/20 flex items-center justify-center gap-2 transition-all cursor-pointer"
+            className="py-2.5 px-4 rounded-2xl bg-[#fef5ee] hover:bg-[#fae8db] border border-[#fed7aa] active:scale-98 text-[#a73605] font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all cursor-pointer"
           >
             <span>🎴</span>
             <span>Share Progress Card</span>
@@ -168,10 +181,10 @@ export const ChildProgressOverview: React.FC = () => {
 
           <button
             onClick={() => navigate('/parent/certificates')}
-            className="py-3 px-5 rounded-2xl bg-[#fef5d9] hover:bg-[#fdebc0] border border-[#fed7aa] active:scale-98 text-[#9a6208] font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all cursor-pointer"
+            className="py-2.5 px-4 rounded-2xl bg-[#fef5d9] hover:bg-[#fdebc0] border border-[#fed7aa] active:scale-98 text-[#9a6208] font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all cursor-pointer"
           >
             <span>📜</span>
-            <span>View Certificates ({earnedCertsCount})</span>
+            <span>Certificates ({earnedCertsCount})</span>
           </button>
         </div>
       </div>
@@ -233,17 +246,28 @@ export const ChildProgressOverview: React.FC = () => {
                 Skill Mastery Breakdown
               </h2>
               <p className="text-xs text-slate-500 mt-0.5">
-                Progress toward mastery benchmarks in 5 core competencies.
+                Click any skill to inspect child responses &amp; learning tips.
               </p>
             </div>
-            <TrendingUp className="w-5 h-5 text-[#a73605]" />
+            <button
+              onClick={() => navigate('/parent/skills')}
+              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-[#fef5ee] border border-[#fed7aa] text-xs font-bold text-[#a73605] hover:bg-[#fdebc0] transition-colors cursor-pointer"
+            >
+              <span>View All</span>
+              <TrendingUp className="w-3.5 h-3.5" />
+            </button>
           </div>
 
-          <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-3">
             {skills.map((skill) => (
-              <div key={skill.name} className="flex flex-col gap-1.5 group cursor-default">
+              <div
+                key={skill.name}
+                onClick={() => navigate(`/parent/skills/${skill.id}`)}
+                className="flex flex-col gap-1.5 p-2.5 -mx-2 rounded-2xl hover:bg-[#faf4ee] transition-all cursor-pointer group"
+                title={`Click to view ${skill.name} breakdown`}
+              >
                 <div className="flex justify-between items-center text-xs sm:text-sm">
-                  <span className="font-bold text-slate-800 flex items-center gap-1.5">
+                  <span className="font-bold text-slate-800 flex items-center gap-1.5 group-hover:text-[#a73605] transition-colors">
                     <span>{skill.icon}</span>
                     <span>{skill.name}</span>
                   </span>
@@ -252,6 +276,9 @@ export const ChildProgressOverview: React.FC = () => {
                       {skill.level}
                     </span>
                     <span className="font-extrabold text-slate-900">{skill.percentage}%</span>
+                    <span className="text-xs text-[#a73605] opacity-0 group-hover:opacity-100 transition-opacity font-bold">
+                      →
+                    </span>
                   </div>
                 </div>
 
@@ -308,21 +335,29 @@ export const ChildProgressOverview: React.FC = () => {
       </div>
 
       {/* ── Bottom Prominent CTAs ── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full pt-2">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 w-full pt-2">
+        <button
+          onClick={() => navigate('/parent/skills')}
+          className="w-full py-4 px-5 rounded-2xl bg-[#a73605] hover:bg-[#8e2e04] active:scale-[0.99] text-white font-extrabold text-xs sm:text-sm shadow-lg shadow-[#a73605]/20 flex items-center justify-center gap-2 transition-all cursor-pointer"
+        >
+          <span className="text-lg">📊</span>
+          <span>View Detailed Breakdown</span>
+        </button>
+
         <button
           onClick={() => navigate('/parent/share')}
-          className="w-full py-4 px-6 rounded-2xl bg-[#a73605] hover:bg-[#8e2e04] active:scale-[0.99] text-white font-extrabold text-sm sm:text-base shadow-lg shadow-[#a73605]/20 flex items-center justify-center gap-2.5 transition-all cursor-pointer"
+          className="w-full py-4 px-5 rounded-2xl bg-[#fef5ee] hover:bg-[#fae8db] border border-[#fed7aa] active:scale-[0.99] text-[#a73605] font-extrabold text-xs sm:text-sm shadow-xs flex items-center justify-center gap-2 transition-all cursor-pointer"
         >
-          <span className="text-xl">🎴</span>
-          <span>Open Share Progress Card</span>
+          <span className="text-lg">🎴</span>
+          <span>Share Progress Card</span>
         </button>
 
         <button
           onClick={() => navigate('/parent/certificates')}
-          className="w-full py-4 px-6 rounded-2xl bg-[#fbbf24] hover:bg-[#f59e0b] active:scale-[0.99] text-slate-900 font-extrabold text-sm sm:text-base shadow-md flex items-center justify-center gap-2.5 transition-all cursor-pointer"
+          className="w-full py-4 px-5 rounded-2xl bg-[#fbbf24] hover:bg-[#f59e0b] active:scale-[0.99] text-slate-900 font-extrabold text-xs sm:text-sm shadow-md flex items-center justify-center gap-2 transition-all cursor-pointer"
         >
-          <Award className="w-5 h-5 text-slate-900" />
-          <span>View All Earned Certificates</span>
+          <Award className="w-4 h-4 text-slate-900" />
+          <span>Certificates ({earnedCertsCount})</span>
         </button>
       </div>
 
