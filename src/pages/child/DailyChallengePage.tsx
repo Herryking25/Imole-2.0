@@ -26,19 +26,19 @@ export const DailyChallengePage: React.FC = () => {
   // Skill filter list
   const filterTabs = [
     { id: 'all', label: 'All Skills', icon: '' },
-    { id: 'mental-math-logic', label: 'Math', emoji: '🧮', bg: 'bg-[#fee2e2]/80 text-[#991b1b] border-rose-200' },
-    { id: 'financial-literacy', label: 'Finance', emoji: '💰', bg: 'bg-[#fef3c7]/80 text-[#92400e] border-amber-200' },
-    { id: 'persuasive-speaking', label: 'Speaking', emoji: '🗣️', bg: 'bg-[#f3e8ff]/80 text-[#6b21a8] border-purple-200' },
-    { id: 'creative-problem-solving', label: 'Problem Solving', emoji: '💡', bg: 'bg-[#ffedd5]/80 text-[#9a3412] border-orange-200' },
-    { id: 'emotional-intelligence', label: 'Emotional IQ', emoji: '❤️', bg: 'bg-[#fce7f3]/80 text-[#9d174d] border-pink-200' },
+    { id: 'mental-math-logic', label: 'Mental Math & Logic', emoji: '🧮', bg: 'bg-[#fee2e2]/80 text-[#991b1b] border-rose-200' },
+    { id: 'persuasive-speaking', label: 'Persuasive Speaking', emoji: '🗣️', bg: 'bg-[#f3e8ff]/80 text-[#6b21a8] border-purple-200' },
+    { id: 'financial-literacy', label: 'Financial Literacy', emoji: '💰', bg: 'bg-[#fef3c7]/80 text-[#92400e] border-amber-200' },
+    { id: 'creative-problem-solving', label: 'Creative Problem Solving', emoji: '💡', bg: 'bg-[#ffedd5]/80 text-[#9a3412] border-orange-200' },
+    { id: 'emotional-intelligence', label: 'Emotional Intelligence', emoji: '❤️', bg: 'bg-[#fce7f3]/80 text-[#9d174d] border-pink-200' },
   ];
 
   // Core challenge cards matching mockup
   const featuredChallenges = [
     {
-      id: 'fin-01',
-      title: 'Budget Boss',
-      description: 'Learn how to divide your weekly allowance into savings and spending.',
+      id: 'fl-13',
+      title: 'Needs vs Wants in the Supermarket',
+      description: 'Choose school essentials first and save the balance from your budget.',
       emoji: '💰',
       emojiBg: 'bg-[#fef3c7]',
       skillId: 'financial-literacy',
@@ -48,8 +48,8 @@ export const DailyChallengePage: React.FC = () => {
     },
     {
       id: 'mml-01',
-      title: 'Market Math',
-      description: 'Calculate change quickly when buying groceries at the local market.',
+      title: 'The Market Woman’s Change',
+      description: 'Work out the right change after buying exercise books at Mama Ngozi’s stall.',
       emoji: '🧮',
       emojiBg: 'bg-[#fee2e2]',
       skillId: 'mental-math-logic',
@@ -59,9 +59,9 @@ export const DailyChallengePage: React.FC = () => {
       maxStars: 3,
     },
     {
-      id: 'cps-01',
-      title: 'Community Helper',
-      description: 'Identify three ways you can help keep your local neighborhood clean.',
+      id: 'cps-19',
+      title: 'The Power Outage Study Hack',
+      description: 'Find a clever way to light your study space when the power goes out.',
       emoji: '🌍',
       emojiBg: 'bg-sky-100',
       skillId: 'creative-problem-solving',
@@ -72,8 +72,8 @@ export const DailyChallengePage: React.FC = () => {
     },
     {
       id: 'ps-07',
-      title: 'Confident Speaker',
-      description: 'Master body language and eye contact when pitching your ideas to an audience.',
+      title: 'Convince Your Parents for a Library Card',
+      description: 'Make a respectful case for how a community library can help your future.',
       emoji: '🗣️',
       emojiBg: 'bg-[#f3e8ff]',
       skillId: 'persuasive-speaking',
@@ -82,9 +82,9 @@ export const DailyChallengePage: React.FC = () => {
       maxStars: 3,
     },
     {
-      id: 'eq-01',
-      title: 'Friendship & Empathy',
-      description: 'Learn active listening techniques to resolve misunderstandings calmly.',
+      id: 'eq-25',
+      title: 'Responding to Teasing with Poise',
+      description: 'Respond calmly and confidently when a classmate teases you.',
       emoji: '❤️',
       emojiBg: 'bg-[#fce7f3]',
       skillId: 'emotional-intelligence',

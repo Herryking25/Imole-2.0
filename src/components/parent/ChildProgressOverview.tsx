@@ -135,7 +135,7 @@ export const ChildProgressOverview: React.FC = () => {
           <div>
             <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight flex items-center justify-center md:justify-start gap-2">
               <span>👨‍👩‍👧</span>
-              <span>{childName}&apos;s Learning Journey</span>
+              <span>{childName}&apos;s Progress</span>
             </h1>
 
             <p className="text-xs sm:text-sm font-medium text-slate-500 mt-1">
@@ -286,7 +286,7 @@ export const ChildProgressOverview: React.FC = () => {
               <div key={item.id} className="flex items-center justify-between gap-3 pt-3.5 first:pt-0">
                 <div className="flex items-center gap-3 min-w-0">
                   <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0 shadow-2xs">
-                    <Check className="w-4 h-4 stroke-[3]" />
+                    <Check className="w-4 h-4 stroke-3" />
                   </div>
                   <div className="min-w-0">
                     <h3 className="text-xs sm:text-sm font-bold text-slate-900 truncate">

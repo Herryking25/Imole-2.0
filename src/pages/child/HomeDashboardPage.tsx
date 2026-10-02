@@ -32,7 +32,7 @@ const StreakTrack: React.FC<{ current: number }> = ({ current }) => (
 
           {!isLast && (
             <div
-              className={`flex-1 h-[3px] mx-1 rounded-full transition-all ${nextFilled ? 'bg-[#8a2908]' : 'bg-amber-200/60'
+              className={`flex-1 h-0.75 mx-1 rounded-full transition-all ${nextFilled ? 'bg-[#8a2908]' : 'bg-amber-200/60'
                 }`}
             />
           )}
@@ -201,7 +201,7 @@ export const HomeDashboardPage: React.FC = () => {
         {/* ── Stats Grid: Rank · Completed · Avg Score ── */}
         <div className="grid grid-cols-2 gap-3.5 w-full">
           {/* Rank Card */}
-          <div className="bg-white border border-slate-100/90 rounded-3xl p-4 shadow-[0_2px_12px_rgba(0,0,0,0.03)] flex flex-col items-center justify-center text-center min-h-[140px]">
+          <div className="bg-white border border-slate-100/90 rounded-3xl p-4 shadow-[0_2px_12px_rgba(0,0,0,0.03)] flex flex-col items-center justify-center text-center min-h-35">
             <span className="text-3xl mb-1 filter drop-shadow-xs">🏆</span>
             <span className="text-xs font-semibold text-slate-500">Rank</span>
             <span className="text-2xl font-black text-slate-900 mt-0.5">

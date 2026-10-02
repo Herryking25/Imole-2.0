@@ -21,7 +21,8 @@ export const ChildSidebar: React.FC<ChildSidebarProps> = ({ className = '' }) =>
 
   const isProgressActive =
     location.pathname === '/child/progress' ||
-    location.pathname === '/parent/share';
+    location.pathname === '/parent/share' ||
+    location.pathname.startsWith('/parent/skills');
 
   const isLeaderboardActive = location.pathname === '/child/leaderboard';
 

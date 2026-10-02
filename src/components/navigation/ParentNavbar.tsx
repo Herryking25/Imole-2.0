@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, NavLink } from 'react-router-dom';
-import { ShieldCheck, Award, Share2, ArrowLeft, UserCheck } from 'lucide-react';
+import { ShieldCheck, Award, Share2, ArrowLeft, UserCheck, BookOpen } from 'lucide-react';
 import { ParentProfileService } from '../../services/parentProfileService';
 import { useLanguage } from '../../hooks/useLanguage';
 
@@ -11,6 +11,7 @@ export const ParentNavbar: React.FC = () => {
 
   const links = [
     { to: '/parent', label: 'Progress Overview', icon: <ShieldCheck className="w-4 h-4" /> },
+    { to: '/parent/skills', label: 'Skill Breakdown', icon: <BookOpen className="w-4 h-4" /> },
     { to: '/parent/share', label: 'Share Progress', icon: <Share2 className="w-4 h-4" /> },
     { to: '/parent/certificates', label: 'Certificates', icon: <Award className="w-4 h-4" /> },
   ];

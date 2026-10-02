@@ -27,6 +27,7 @@ import { ChildSettingsPage } from '../pages/child/ChildSettingsPage';
 import { ParentDashboardPage } from '../pages/parent/ParentDashboardPage';
 import { ShareProgressPage } from '../pages/parent/ShareProgressPage';
 import { CertificatesPage } from '../pages/parent/CertificatesPage';
+import { ParentSkillBreakdownPage } from '../pages/parent/ParentSkillBreakdownPage';
 import { ParentLanguagePage } from '../pages/parent/ParentLanguagePage';
 import { ParentRegisterPage } from '../pages/parent/ParentRegisterPage';
 import { ParentVerifyEmailPage } from '../pages/parent/ParentVerifyEmailPage';
@@ -84,6 +85,8 @@ export const AppRoutes: React.FC = () => {
       {/* Parent Flow */}
       <Route path="/parent" element={<ParentLayout />}>
         <Route index element={<ParentDashboardPage />} />
+        <Route path="skills" element={<ParentSkillBreakdownPage />} />
+        <Route path="skills/:skillId" element={<ParentSkillBreakdownPage />} />
         <Route path="share" element={<ShareProgressPage />} />
         <Route path="certificates" element={<CertificatesPage />} />
       </Route>
