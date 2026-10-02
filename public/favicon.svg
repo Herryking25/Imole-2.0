@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" fill="none">
+  <defs>
+    <radialGradient id="imole-grad" cx="48%" cy="36%" r="60%" fx="46%" fy="32%">
+      <stop offset="0%" stop-color="#f59e0b" />
+      <stop offset="35%" stop-color="#ea6c0c" />
+      <stop offset="70%" stop-color="#dc4f06" />
+      <stop offset="100%" stop-color="#ba3804" />
+    </radialGradient>
+  </defs>
+  <!-- Background circle -->
+  <circle cx="60" cy="60" r="54" fill="url(#imole-grad)" />
+  <!-- Center sun disk -->
+  <circle cx="60" cy="60" r="16" fill="#ffffff" />
+  <!-- 8 Sun rays with rounded caps -->
+  <g stroke="#ffffff" stroke-width="4" stroke-linecap="round">
+    <line x1="83" y1="60" x2="94" y2="60" />
+    <line x1="76.26" y1="76.26" x2="84.04" y2="84.04" />
+    <line x1="60" y1="83" x2="60" y2="94" />
+    <line x1="43.74" y1="76.26" x2="35.96" y2="84.04" />
+    <line x1="37" y1="60" x2="26" y2="60" />
+    <line x1="43.74" y1="43.74" x2="35.96" y2="35.96" />
+    <line x1="60" y1="37" x2="60" y2="26" />
+    <line x1="76.26" y1="43.74" x2="84.04" y2="35.96" />
+  </g>
+</svg>
