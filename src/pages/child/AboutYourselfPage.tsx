@@ -21,6 +21,7 @@ export const AboutYourselfPage: React.FC = () => {
     (profile?.preferredLanguage as SupportedLanguage) || language || 'pcm'
   );
   const [error, setError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const ageGroups = ['8 - 10', '11 - 13', '14 - 16'];
 
@@ -30,7 +31,7 @@ export const AboutYourselfPage: React.FC = () => {
     { id: 'yo', label: 'Yoruba' },
   ];
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     const cleanName = name.trim();
@@ -52,19 +53,27 @@ export const AboutYourselfPage: React.FC = () => {
 
     const mapped = ageMap[selectedAgeGroup] || { age: 12, grp: '10 - 13' };
 
-    createProfile({
-      name: cleanName,
-      firstName,
-      lastName,
-      username: cleanName,
-      age: mapped.age,
-      ageGroup: mapped.grp,
-      preferredLanguage: selectedLanguage,
-      avatarId: profile?.avatarId || 'avatar-eagle',
-    });
+    setIsSubmitting(true);
+    try {
+      await createProfile({
+        name: cleanName,
+        firstName,
+        lastName,
+        username: cleanName,
+        age: mapped.age,
+        ageGroup: mapped.grp,
+        preferredLanguage: selectedLanguage,
+        avatarId: profile?.avatarId || 'avatar-eagle',
+      });
 
-    setLanguage(selectedLanguage);
-    navigate('/child/settings');
+      setLanguage(selectedLanguage);
+      navigate('/child/dashboard');
+    } catch (err) {
+      console.error('[AboutYourselfPage] Profile creation error:', err);
+      navigate('/child/dashboard');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -176,9 +185,14 @@ export const AboutYourselfPage: React.FC = () => {
           {/* ── Update Info CTA Button ── */}
           <button
             type="submit"
-            className="w-full py-4 px-6 rounded-full bg-[#a73605] hover:bg-[#8e2e04] active:scale-[0.98] text-white font-bold text-base shadow-lg shadow-[#a73605]/25 mt-6 transition-all cursor-pointer text-center"
+            disabled={isSubmitting}
+            className="w-full py-4 px-6 rounded-full bg-[#a73605] hover:bg-[#8e2e04] active:scale-[0.98] disabled:opacity-60 text-white font-bold text-base shadow-lg shadow-[#a73605]/25 mt-6 transition-all cursor-pointer text-center flex items-center justify-center gap-2"
           >
-            Update Info
+            {isSubmitting ? (
+              <span>Saving Profile...</span>
+            ) : (
+              <span>Update Info</span>
+            )}
           </button>
 
         </form>

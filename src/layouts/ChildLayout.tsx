@@ -84,7 +84,7 @@ export const ChildLayout: React.FC = () => {
           )}
         </main>
 
-        <BottomNav />
+        {location.pathname !== '/child/welcome' && <BottomNav />}
       </div>
     </div>
   );

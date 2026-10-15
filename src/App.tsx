@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter } from 'react-router-dom';
 import { LanguageProvider } from './context/LanguageContext';
 import { AppProvider } from './context/AppContext';
+import { ParentProvider } from './context/ParentContext';
 import { AppRoutes } from './routes/AppRoutes';
 
 export const App: React.FC = () => {
@@ -9,7 +10,9 @@ export const App: React.FC = () => {
     <BrowserRouter>
       <LanguageProvider>
         <AppProvider>
-          <AppRoutes />
+          <ParentProvider>
+            <AppRoutes />
+          </ParentProvider>
         </AppProvider>
       </LanguageProvider>
     </BrowserRouter>

@@ -1,29 +1,65 @@
 import React, { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { CheckCircle2, ArrowLeft, Copy, MessageCircle } from 'lucide-react';
+import { CheckCircle2, ArrowLeft, Copy, MessageCircle, RefreshCw, Award, Sparkles } from 'lucide-react';
 import * as htmlToImage from 'html-to-image';
 import { useApp } from '../../hooks/useApp';
+import { useParent } from '../../hooks/useParent';
 
 export const ProgressShareCard: React.FC = () => {
   const navigate = useNavigate();
   const { profile, progress, streak } = useApp();
+  const { selectedChild, shareCardData, isLoadingShareCard, refreshShareCard } = useParent();
+
   const cardRef = useRef<HTMLDivElement>(null);
   const [isExporting, setIsExporting] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [showShareModal, setShowShareModal] = useState(false);
 
-  // Dynamic or polished mock values matching screenshot
-  const childName = profile?.name || profile?.firstName || 'Chidi';
-  const currentStreak = streak.currentStreak > 0 ? streak.currentStreak : 14;
-  const lessonsCompleted = progress.totalCompleted > 0 ? progress.totalCompleted : 12;
-  const starsEarned = progress.totalPoints > 0 ? progress.totalPoints : 350;
+  // Derive values from backend share-card API if available, else local state
+  const childName =
+    shareCardData?.name || selectedChild?.name || profile?.name || profile?.firstName || 'Ada';
+
+  const currentStreak =
+    shareCardData?.currentStreak !== undefined
+      ? shareCardData.currentStreak
+      : streak.currentStreak > 0
+      ? streak.currentStreak
+      : 14;
+
+  const bestStreak =
+    shareCardData?.bestStreak !== undefined
+      ? shareCardData.bestStreak
+      : streak.bestStreak || currentStreak;
+
+  const lessonsCompleted =
+    shareCardData?.totalCompleted !== undefined
+      ? shareCardData.totalCompleted
+      : progress.totalCompleted > 0
+      ? progress.totalCompleted
+      : 12;
+
+  const starsEarned =
+    shareCardData?.totalPoints !== undefined
+      ? shareCardData.totalPoints
+      : progress.totalPoints > 0
+      ? progress.totalPoints
+      : 350;
+
+  const topSkill = shareCardData?.topSkill || 'Mental Math & Logic';
+  const certificatesEarned = shareCardData?.certificatesEarned || 0;
 
   // Format date like "June 19, 2026" or current date
-  const formattedDate = new Intl.DateTimeFormat('en-US', {
-    month: 'long',
-    day: 'numeric',
-    year: 'numeric',
-  }).format(new Date());
+  const formattedDate = shareCardData?.generatedAt
+    ? new Intl.DateTimeFormat('en-US', {
+        month: 'long',
+        day: 'numeric',
+        year: 'numeric',
+      }).format(new Date(shareCardData.generatedAt))
+    : new Intl.DateTimeFormat('en-US', {
+        month: 'long',
+        day: 'numeric',
+        year: 'numeric',
+      }).format(new Date());
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -56,7 +92,7 @@ export const ProgressShareCard: React.FC = () => {
 
   // Handle Share with Family
   const handleShareWithFamily = async () => {
-    const shareText = `🌟 Proud Parent Moment! My child ${childName} is learning life skills on IMOLE!\n🔥 ${currentStreak} Day Streak\n📚 ${lessonsCompleted} Lessons Completed\n⭐ ${starsEarned} Stars Earned\nCheck it out: https://imole.ng`;
+    const shareText = `🌟 Proud Parent Moment! My child ${childName} is learning life skills on IMOLE!\n🔥 ${currentStreak} Day Streak (Best: ${bestStreak})\n📚 ${lessonsCompleted} Lessons Completed\n⭐ ${starsEarned} Points Earned\n🎯 Top Skill: ${topSkill}\nCheck it out: https://imole.ng`;
 
     // Try Web Share API with image if supported
     if (navigator.share && cardRef.current) {
@@ -87,7 +123,6 @@ export const ProgressShareCard: React.FC = () => {
           return;
         }
       } catch (e) {
-        // Fallback to modal if user cancelled or unsupported
         if ((e as Error).name !== 'AbortError') {
           setShowShareModal(true);
         }
@@ -99,7 +134,7 @@ export const ProgressShareCard: React.FC = () => {
 
   const handleWhatsAppDirect = () => {
     const text = encodeURIComponent(
-      `🌟 Proud Parent Moment! My child ${childName} is shining on IMOLE!\n🔥 ${currentStreak} Day Streak\n📚 ${lessonsCompleted} Lessons Completed\n⭐ ${starsEarned} Stars Earned\n\nEquipping African kids with practical life skills (Mental Math, Financial Literacy & Communication) 🚀\nhttps://imole.ng`
+      `🌟 Proud Parent Moment! My child ${childName} is shining on IMOLE!\n🔥 ${currentStreak} Day Streak\n📚 ${lessonsCompleted} Lessons Completed\n⭐ ${starsEarned} Stars Earned\n🎯 Top Skill: ${topSkill}\n\nEquipping African kids with practical life skills (Mental Math, Financial Literacy & Communication) 🚀\nhttps://imole.ng`
     );
     window.open(`https://api.whatsapp.com/send?text=${text}`, '_blank');
     setShowShareModal(false);
@@ -116,10 +151,36 @@ export const ProgressShareCard: React.FC = () => {
 
   return (
     <div className="w-full max-w-xl mx-auto flex flex-col font-sans select-none pb-12">
-      {/* ── Screen Header Title ── */}
-      <h1 className="text-2xl sm:text-3xl font-bold text-[#9c3205] text-center mb-6 tracking-tight">
-        Share Progress
-      </h1>
+      {/* ── Screen Header Title & Sync Button ── */}
+      <div className="flex items-center justify-between mb-6">
+        <button
+          type="button"
+          onClick={() => navigate('/parent')}
+          className="inline-flex items-center gap-1.5 text-xs font-bold text-[#a73605] hover:text-[#8e2e04] cursor-pointer"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          <span>Back</span>
+        </button>
+
+        <h1 className="text-xl sm:text-2xl font-black text-[#9c3205] tracking-tight">
+          Share Progress
+        </h1>
+
+        <button
+          type="button"
+          onClick={() => refreshShareCard()}
+          disabled={isLoadingShareCard}
+          className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-white border border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-50 active:scale-95 transition-all shadow-2xs cursor-pointer"
+          title="Refresh share card from backend"
+        >
+          <RefreshCw
+            className={`w-3.5 h-3.5 text-[#a73605] ${
+              isLoadingShareCard ? 'animate-spin' : ''
+            }`}
+          />
+          <span className="hidden sm:inline">Refresh</span>
+        </button>
+      </div>
 
       {/* ── Toast Notification ── */}
       {toastMessage && (
@@ -143,21 +204,21 @@ export const ProgressShareCard: React.FC = () => {
             </span>
           </div>
 
-          <span className="text-xs sm:text-sm font-medium text-slate-700">
+          <span className="text-xs sm:text-sm font-medium text-slate-600">
             {formattedDate}
           </span>
         </div>
 
         {/* Center: Child Name & Streak */}
         <div className="flex flex-col items-center text-center my-2">
-          <h2 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight mb-2">
+          <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight mb-2">
             {childName}&apos;s Progress
           </h2>
 
           {/* Streak Pill */}
           <div className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-[#fef08a] text-amber-950 text-xs font-black shadow-2xs mb-6">
             <span>🔥</span>
-            <span>{currentStreak} Day Streak!</span>
+            <span>{currentStreak} Day Streak! (Best: {bestStreak})</span>
           </div>
         </div>
 
@@ -173,23 +234,45 @@ export const ProgressShareCard: React.FC = () => {
             </span>
           </div>
 
-          {/* Box 2: Stars Earned */}
+          {/* Box 2: Points Earned */}
           <div className="bg-[#fdf4ee] rounded-2xl p-4 sm:p-5 border border-[#f8e2d2] flex flex-col items-center justify-center text-center">
             <span className="text-3xl sm:text-4xl font-extrabold text-[#a33e0e] leading-none mb-1">
               {starsEarned}
             </span>
             <span className="text-xs sm:text-sm font-medium text-slate-700">
-              Stars Earned
+              Total Points Earned
             </span>
           </div>
         </div>
 
+        {/* Top Skill & Certificates Highlight */}
+        <div className="bg-gradient-to-r from-[#fff7ed] to-[#ffedd5] rounded-2xl p-4 border border-[#fed7aa] mb-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-[#a73605] text-white flex items-center justify-center shrink-0 shadow-2xs">
+              <Sparkles className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider">
+                Top Skill
+              </p>
+              <p className="text-sm font-black text-slate-900">{topSkill}</p>
+            </div>
+          </div>
+
+          {certificatesEarned > 0 && (
+            <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white text-emerald-800 text-xs font-black shadow-2xs border border-emerald-200">
+              <Award className="w-4 h-4 text-emerald-600" />
+              <span>{certificatesEarned} Certs</span>
+            </div>
+          )}
+        </div>
+
         {/* Skill Progress Bars */}
         <div className="flex flex-col gap-4 w-full pt-1">
-          {/* Financial Literacy */}
+          {/* Mental Math */}
           <div>
             <div className="flex justify-between items-center text-xs sm:text-sm font-bold text-slate-800 mb-1.5">
-              <span>Financial Literacy</span>
+              <span>Mental Math &amp; Logic</span>
               <span className="text-[#a33e0e]">80%</span>
             </div>
             <div className="w-full h-2 sm:h-2.5 bg-[#f3eae2] rounded-full overflow-hidden">
@@ -200,10 +283,10 @@ export const ProgressShareCard: React.FC = () => {
             </div>
           </div>
 
-          {/* Communication */}
+          {/* Persuasive Speaking */}
           <div>
             <div className="flex justify-between items-center text-xs sm:text-sm font-bold text-slate-800 mb-1.5">
-              <span>Communication</span>
+              <span>Persuasive Speaking</span>
               <span className="text-amber-700">65%</span>
             </div>
             <div className="w-full h-2 sm:h-2.5 bg-[#f3eae2] rounded-full overflow-hidden">
@@ -237,16 +320,6 @@ export const ProgressShareCard: React.FC = () => {
         >
           <span className="text-base">📬</span>
           <span>Share with Family</span>
-        </button>
-
-        {/* 3. Back Button */}
-        <button
-          type="button"
-          onClick={() => navigate('/parent')}
-          className="w-full py-3 px-6 rounded-full bg-[#fdeee6] hover:bg-[#fadfd3] active:scale-98 text-[#a33e0e] font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 transition-all cursor-pointer"
-        >
-          <ArrowLeft className="w-4 h-4 stroke-[2.5]" />
-          <span>Back</span>
         </button>
       </div>
 

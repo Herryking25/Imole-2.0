@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { ChevronRight, UserCircle } from 'lucide-react';
 import { useApp } from '../../hooks/useApp';
 import { useLeaderboard } from '../../hooks/useLeaderboard';
+import { useDailyChallenge } from '../../hooks/useDailyChallenge';
 import { ChallengeService } from '../../services/challengeService';
 import { SKILLS_DATA } from '../../data/skills';
 import { useLanguage } from '../../hooks/useLanguage';
@@ -65,7 +66,7 @@ const SkillBadge: React.FC<{ skillId: string }> = ({ skillId }) => {
   };
 
   const emoji = skillEmojiMap[skillId] || '🧠';
-  const label = labelMap[skillId] || skill?.name || 'Mental Math';
+  const label = labelMap[skillId] || skill?.name || 'Life Skill';
 
   return (
     <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-[#fef2f2] text-[#991b1b] border border-[#fecdd3]">
@@ -80,11 +81,11 @@ const SkillBadge: React.FC<{ skillId: string }> = ({ skillId }) => {
 // ──────────────────────────────────────────────
 export const HomeDashboardPage: React.FC = () => {
   const navigate = useNavigate();
-  const { profile, streak, progress, isDailyCompleted } = useApp();
+  const { profile, streak, progress } = useApp();
+  const { challenge, isCompleted: isDailyCompleted } = useDailyChallenge();
   const { currentUserEntry } = useLeaderboard();
   const { language } = useLanguage();
 
-  const challenge = ChallengeService.getDailyChallenge();
   const allChallenges = ChallengeService.getAllChallenges();
 
   const displayName =

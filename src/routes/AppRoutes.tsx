@@ -35,6 +35,7 @@ import { ParentSetPinPage } from '../pages/parent/ParentSetPinPage';
 import { ParentUnlockPage } from '../pages/parent/ParentUnlockPage';
 import { ParentForgotPinPage } from '../pages/parent/ParentForgotPinPage';
 import { ParentAuthPage } from '../pages/parent/ParentAuthPage';
+import { ParentLoginPage } from '../pages/parent/ParentLoginPage';
 
 // Admin Pages
 import { PlatformMetricsPage } from '../pages/admin/PlatformMetricsPage';
@@ -52,6 +53,7 @@ export const AppRoutes: React.FC = () => {
       {/* Standalone Parent Onboarding Flow */}
       <Route path="/parent/language" element={<ParentLanguagePage />} />
       <Route path="/parent/auth" element={<ParentAuthPage />} />
+      <Route path="/parent/login" element={<ParentLoginPage />} />
       <Route path="/parent/register" element={<ParentRegisterPage />} />
       <Route path="/parent/verify-email" element={<ParentVerifyEmailPage />} />
       <Route path="/parent/set-pin" element={<ParentSetPinPage />} />

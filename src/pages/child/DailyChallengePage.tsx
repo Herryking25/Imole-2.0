@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, ChevronRight, CheckCircle2, Lock, Star, Send } from 'lucide-react';
+import { ArrowLeft, ChevronRight, CheckCircle2, Lock, Star, Send, RefreshCw, Sparkles } from 'lucide-react';
 import { useDailyChallenge } from '../../hooks/useDailyChallenge';
 import { useApp } from '../../hooks/useApp';
 import { useLanguage } from '../../hooks/useLanguage';
@@ -14,7 +14,15 @@ export const DailyChallengePage: React.FC = () => {
   const navigate = useNavigate();
   const { language } = useLanguage();
   const { progress } = useApp();
-  const { submit, isSubmitting } = useDailyChallenge();
+  const {
+    challenge: dailyChallenge,
+    isCompleted: isDailyCompleted,
+    swapsRemaining,
+    isSwapping,
+    swap,
+    submit,
+    isSubmitting,
+  } = useDailyChallenge();
 
   const [selectedFilter, setSelectedFilter] = useState<string>('all');
   const [activeChallengeModal, setActiveChallengeModal] = useState<Challenge | null>(null);
@@ -22,6 +30,7 @@ export const DailyChallengePage: React.FC = () => {
   const [textResponse, setTextResponse] = useState<string>('');
   const [modalFeedback, setModalFeedback] = useState<SubmissionFeedback | null>(null);
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
+  const [swapToast, setSwapToast] = useState<string>('');
 
   // Skill filter list
   const filterTabs = [
@@ -102,6 +111,13 @@ export const DailyChallengePage: React.FC = () => {
 
   // Handle open challenge
   const handleOpenChallenge = (challengeId: string) => {
+    if (challengeId === dailyChallenge.id || challengeId === 'today') {
+      setActiveChallengeModal(dailyChallenge);
+      setSelectedOptionId('');
+      setTextResponse('');
+      return;
+    }
+
     const found =
       CURATED_CHALLENGES.find((c) => c.id === challengeId) ||
       CURATED_CHALLENGES.find((c) => c.skillId === selectedFilter) ||
@@ -109,6 +125,18 @@ export const DailyChallengePage: React.FC = () => {
     setActiveChallengeModal(found);
     setSelectedOptionId('');
     setTextResponse('');
+  };
+
+  // Handle swap challenge
+  const handleSwap = async () => {
+    const success = await swap();
+    if (success) {
+      setSwapToast('Challenge swapped successfully! ✨');
+      setTimeout(() => setSwapToast(''), 3000);
+    } else {
+      setSwapToast('No swaps remaining today.');
+      setTimeout(() => setSwapToast(''), 3000);
+    }
   };
 
   // Submit challenge answer
@@ -119,10 +147,10 @@ export const DailyChallengePage: React.FC = () => {
     let responseText = textResponse;
     if (activeChallengeModal.type === 'mcq' && selectedOptionId) {
       const opt = activeChallengeModal.options?.find((o) => o.id === selectedOptionId);
-      responseText = opt ? opt.text[language] || opt.text.en : '';
+      responseText = opt ? opt.text[language] || opt.text.en : selectedOptionId;
     }
 
-    const feedback = await submit(responseText, selectedOptionId);
+    const feedback = await submit(responseText, selectedOptionId || undefined);
     setActiveChallengeModal(null);
     setModalFeedback(feedback);
     setIsFeedbackOpen(true);
@@ -143,8 +171,74 @@ export const DailyChallengePage: React.FC = () => {
           </button>
           <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
             <span>📚</span>
-            <span>All Challenges</span>
+            <span>Daily Challenges</span>
           </h1>
+        </div>
+
+        {/* ── Today's Active Challenge Hero Card ── */}
+        <div className="w-full bg-gradient-to-br from-[#fff7ed] via-white to-[#fef3c7]/40 border border-amber-200/80 rounded-3xl p-5 shadow-[0_4px_16px_rgba(167,54,5,0.06)] relative overflow-hidden text-left">
+          {/* Toast Message */}
+          {swapToast && (
+            <div className="absolute top-3 right-3 z-20 bg-slate-900 text-white text-xs font-bold py-1 px-3 rounded-full shadow-md animate-in fade-in duration-200">
+              {swapToast}
+            </div>
+          )}
+
+          <div className="flex items-center justify-between mb-2.5">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-[#a73605] text-white shadow-xs">
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>Today’s Challenge</span>
+            </span>
+
+            {!isDailyCompleted && swapsRemaining > 0 && (
+              <span className="text-[11px] font-bold text-amber-800 bg-amber-100/80 px-2.5 py-0.5 rounded-full border border-amber-200/60">
+                {swapsRemaining} swap{swapsRemaining === 1 ? '' : 's'} left
+              </span>
+            )}
+          </div>
+
+          <h2 className="text-base sm:text-lg font-black text-slate-900 leading-snug mb-2">
+            {dailyChallenge.title[language] || dailyChallenge.title.en}
+          </h2>
+
+          <p className="text-xs sm:text-sm font-medium text-slate-600 line-clamp-3 mb-4 leading-relaxed">
+            {dailyChallenge.scenario[language] || dailyChallenge.scenario.en}
+          </p>
+
+          <div className="flex items-center gap-2.5 pt-1">
+            <button
+              onClick={() => handleOpenChallenge(dailyChallenge.id)}
+              className={`flex-1 py-3 px-5 rounded-full text-xs font-bold tracking-wide flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                isDailyCompleted
+                  ? 'bg-slate-100 text-slate-500 border border-slate-200 cursor-default'
+                  : 'bg-[#a73605] hover:bg-[#8e2e04] active:scale-95 text-white shadow-md shadow-[#a73605]/20'
+              }`}
+            >
+              {isDailyCompleted ? (
+                <>
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                  <span>Completed Today ✅</span>
+                </>
+              ) : (
+                <>
+                  <span>Play Today’s Challenge</span>
+                  <span className="text-sm">→</span>
+                </>
+              )}
+            </button>
+
+            {!isDailyCompleted && swapsRemaining > 0 && (
+              <button
+                onClick={handleSwap}
+                disabled={isSwapping}
+                className="py-3 px-4 rounded-full border border-amber-300 bg-amber-50 hover:bg-amber-100 active:scale-95 text-amber-900 text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer disabled:opacity-50 shrink-0"
+                title="Swap for another challenge (max 2 per day)"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${isSwapping ? 'animate-spin' : ''}`} />
+                <span>Swap</span>
+              </button>
+            )}
+          </div>
         </div>
 
         {/* ── Category Filter Pills ── */}

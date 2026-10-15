@@ -1,10 +1,27 @@
 import { SubmissionService } from './submissionService';
 import { StreakService } from './streakService';
 import { ChallengeService } from './challengeService';
+import { ChildApiClient } from './api/childApiClient';
 import type { SkillId } from '../types/skills';
 import type { OverallProgress, SkillProgress, DailyHistoryItem } from '../types/progress';
 
 export class ProgressService {
+  private static mapSlugToSkillId(slug: string): SkillId {
+    const normalized = slug.replace(/_/g, '-');
+    if (normalized === 'mental-math') return 'mental-math-logic';
+    const valid: SkillId[] = [
+      'mental-math-logic',
+      'persuasive-speaking',
+      'financial-literacy',
+      'creative-problem-solving',
+      'emotional-intelligence',
+    ];
+    if (valid.includes(normalized as SkillId)) {
+      return normalized as SkillId;
+    }
+    return 'creative-problem-solving';
+  }
+
   static getOverallProgress(): OverallProgress {
     const submissions = SubmissionService.getSubmissions();
     const streak = StreakService.getStreakData();
@@ -50,7 +67,6 @@ export class ProgressService {
       if (skillMap[sub.skillId]) {
         skillMap[sub.skillId].points += sub.score;
         skillMap[sub.skillId].challengesCompleted += 1;
-        // Every 150 points increases mastery level
         skillMap[sub.skillId].masteryLevel = Math.min(
           5,
           1 + Math.floor(skillMap[sub.skillId].points / 150)
@@ -79,5 +95,47 @@ export class ProgressService {
       history,
     };
   }
-}
 
+  static async fetchRemoteProgress(): Promise<OverallProgress> {
+    const local = this.getOverallProgress();
+
+    if (!ChildApiClient.hasToken()) {
+      return local;
+    }
+
+    try {
+      const res = await ChildApiClient.getProgress();
+      if (res.success) {
+        const skillMap = { ...local.skills };
+
+        if (Array.isArray(res.skills) && res.skills.length > 0) {
+          res.skills.forEach((s) => {
+            const mappedId = this.mapSlugToSkillId(s.skill.slug);
+            if (skillMap[mappedId]) {
+              skillMap[mappedId].points = Math.max(skillMap[mappedId].points, s.score);
+              skillMap[mappedId].challengesCompleted = Math.max(
+                skillMap[mappedId].challengesCompleted,
+                s.challengesCompleted
+              );
+              skillMap[mappedId].masteryLevel = Math.min(
+                5,
+                1 + Math.floor(skillMap[mappedId].points / 150)
+              );
+            }
+          });
+        }
+
+        return {
+          ...local,
+          totalPoints: Math.max(local.totalPoints, res.totalPoints ?? 0),
+          totalCompleted: Math.max(local.totalCompleted, res.totalCompleted ?? 0),
+          skills: skillMap,
+        };
+      }
+    } catch (err) {
+      console.warn('[ProgressService] Failed to sync remote progress:', err);
+    }
+
+    return local;
+  }
+}

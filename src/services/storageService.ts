@@ -8,6 +8,7 @@ export const StorageKeys = {
   CUSTOM_CHALLENGES: `${PREFIX}custom_challenges`,
   LANGUAGE: `${PREFIX}preferred_language`,
   ADMIN_SETTINGS: `${PREFIX}admin_settings`,
+  TODAY_ASSIGNMENT: `${PREFIX}today_assignment`,
 } as const;
 
 export class StorageService {

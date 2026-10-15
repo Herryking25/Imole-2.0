@@ -8,9 +8,10 @@ export interface AppContextType {
   progress: OverallProgress;
   streak: StreakData;
   isDailyCompleted: boolean;
+  isSyncing: boolean;
   refreshState: () => void;
+  syncWithBackend: () => Promise<void>;
   resetChildProfile: () => void;
 }
 
 export const AppContext = createContext<AppContextType | undefined>(undefined);
-

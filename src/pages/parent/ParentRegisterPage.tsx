@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { ArrowLeft, ArrowRight, User, Mail, Lock, Eye, EyeOff, Users } from 'lucide-react';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
+import { ArrowLeft, ArrowRight, User, Mail, Phone, Lock, Eye, EyeOff, Users, Loader2, AlertCircle } from 'lucide-react';
 import { ParentProfileService } from '../../services/parentProfileService';
 import { useLanguage } from '../../hooks/useLanguage';
 import { useProfile } from '../../hooks/useProfile';
+import { useParent } from '../../hooks/useParent';
 import type { SupportedLanguage } from '../../types/i18n';
 
 export const ParentRegisterPage: React.FC = () => {
@@ -11,49 +12,86 @@ export const ParentRegisterPage: React.FC = () => {
   const location = useLocation();
   const { language, setLanguage } = useLanguage();
   const { profile: childProfile } = useProfile();
+  const { register } = useParent();
 
   // Read language chosen in step 1 if passed
   const passedLang = (location.state as { preferredLanguage?: SupportedLanguage })?.preferredLanguage;
   const preferredLang: SupportedLanguage = passedLang || language || 'en';
 
-  const [parentName, setParentName] = useState('Folake Adeyemi');
-  const [email, setEmail] = useState('folake.adeyemi@gmail.com');
-  const [password, setPassword] = useState('••••••••••••');
+  const [parentName, setParentName] = useState('Mrs Okafor');
+  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
 
     if (!parentName.trim()) {
-      setError('Please enter your full name');
+      setError('Please enter your full name.');
       return;
     }
 
-    if (!email.trim() || !email.includes('@')) {
-      setError('Please enter a valid email address');
+    if (!email.trim() && !phone.trim()) {
+      setError('Please provide an email address, a phone number, or both.');
       return;
     }
 
-    // Save parent profile
-    ParentProfileService.saveProfile({
-      parentName: parentName.trim(),
-      email: email.trim(),
-      password: password,
-      preferredLanguage: preferredLang,
-      childName: childProfile?.name || 'Your Child',
-      childAge: childProfile?.age || 10,
-      relationship: 'Guardian',
-      receiveUpdates: true,
-      isEmailVerified: false,
-    });
+    if (email.trim() && !email.includes('@')) {
+      setError('Please enter a valid email address.');
+      return;
+    }
 
-    setLanguage(preferredLang);
-    navigate('/parent/verify-email', { state: { email: email.trim() } });
+    if (!password || password.length < 6) {
+      setError('Password must be at least 6 characters.');
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      const payload = {
+        name: parentName.trim(),
+        email: email.trim() ? email.trim().toLowerCase() : undefined,
+        phone: phone.trim() ? phone.trim() : undefined,
+        password,
+      };
+
+      const res = await register(payload);
+
+      if (res.success && res.parent) {
+        // Save local parent profile
+        ParentProfileService.saveProfile({
+          parentName: res.parent.name,
+          email: res.parent.email || email.trim() || undefined,
+          phone: res.parent.phone || phone.trim() || undefined,
+          password: password,
+          preferredLanguage: preferredLang,
+          childName: childProfile?.name || 'Your Child',
+          childAge: childProfile?.age || 10,
+          relationship: 'Guardian',
+          receiveUpdates: true,
+          isEmailVerified: true,
+        });
+
+        ParentProfileService.unlockSession();
+        setLanguage(preferredLang);
+        navigate('/parent');
+      } else {
+        setError(res.message || 'Registration failed. Please check your details and try again.');
+      }
+    } catch (err: unknown) {
+      setError((err as Error)?.message || 'Network error occurred. Please check your internet connection.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleGoogleSignIn = () => {
-    // Quick link with Google
+    // Quick link with Google fallback
     ParentProfileService.saveProfile({
       parentName: parentName.trim() || 'Folake Adeyemi',
       email: email.trim() || 'folake.adeyemi@gmail.com',
@@ -66,19 +104,19 @@ export const ParentRegisterPage: React.FC = () => {
     });
 
     setLanguage(preferredLang);
-    navigate('/parent/set-pin');
+    navigate('/parent');
   };
 
   return (
     <div className="min-h-screen bg-[#faf7f2] flex flex-col justify-between py-6 px-4 sm:px-6 select-none font-sans">
       <div className="max-w-md w-full mx-auto flex flex-col justify-between min-h-[88vh]">
-
         {/* ── Top Bar ── */}
         <div>
           <div className="flex items-center justify-between pt-1">
             <button
+              type="button"
               onClick={() => navigate('/parent/language')}
-              className="w-11 h-11 rounded-full bg-white border border-slate-200/80 shadow-xs flex items-center justify-center text-slate-700 hover:bg-slate-50 active:scale-95 transition-all cursor-pointer"
+              className="w-11 h-11 rounded-full bg-white border border-slate-200/80 shadow-2xs flex items-center justify-center text-slate-700 hover:bg-slate-50 active:scale-95 transition-all cursor-pointer"
               aria-label="Go back to language selection"
             >
               <ArrowLeft className="w-5 h-5 stroke-[2.2]" />
@@ -90,46 +128,43 @@ export const ParentRegisterPage: React.FC = () => {
               <span>Step 2 of 2 · Parent Profile</span>
             </div>
 
-            {/* Placeholder to balance header flex */}
             <div className="w-11" />
           </div>
 
           {/* ── Center Header Icon ── */}
           <div className="flex flex-col items-center text-center mt-6">
-            <div className="w-16 h-16 rounded-[22px] bg-gradient-to-b from-[#fde6d8] via-[#ffdcd0] to-[#fbcbb7] flex items-center justify-center shadow-xs mb-3">
+            <div className="w-16 h-16 rounded-[22px] bg-gradient-to-b from-[#fde6d8] via-[#ffdcd0] to-[#fbcbb7] flex items-center justify-center shadow-2xs mb-3">
               <Users className="w-8 h-8 text-[#8a2908] stroke-[2.2]" />
             </div>
 
-            {/* Title */}
             <h1 className="text-2xl sm:text-[26px] font-extrabold text-[#292524] tracking-tight">
-              Parent Account Setup
+              Create Parent Account
             </h1>
 
-            {/* Subtitle */}
-            <p className="text-xs sm:text-[13px] text-slate-500 max-w-sm mt-2 leading-relaxed px-2 font-medium">
-              Welcome to <span className="font-bold text-[#b83808]">IMOLE</span> Parent Hub! Set up your credentials to track your child&apos;s learning journey and manage security.
+            <p className="text-xs sm:text-[13px] text-slate-500 max-w-sm mt-1.5 leading-relaxed px-2 font-medium">
+              Join <span className="font-bold text-[#b83808]">IMOLE</span> to connect with your child&apos;s device, review progress, and celebrate milestones.
             </p>
           </div>
 
           {/* ── Form Card ── */}
-          <form onSubmit={handleSubmit} className="mt-5 flex flex-col gap-4">
-            <div className="bg-white rounded-[28px] p-5 sm:p-6 border border-slate-100 shadow-[0_4px_24px_rgba(0,0,0,0.03)] flex flex-col gap-4 text-left">
+          <form onSubmit={handleSubmit} className="mt-5 flex flex-col gap-3.5">
+            <div className="bg-white rounded-[26px] p-5 sm:p-6 border border-slate-100 shadow-[0_4px_24px_rgba(0,0,0,0.03)] flex flex-col gap-3.5 text-left">
               
               {/* Field 1: Name */}
               <div>
                 <label className="block text-[11px] font-extrabold text-slate-700 uppercase tracking-wider mb-1.5">
-                  Parent / Guardian Name
+                  Full Name *
                 </label>
-                <div className="flex items-center gap-3 bg-[#fffbf8] border border-[#f3e8df] rounded-2xl px-4 py-3.5 focus-within:border-[#b83808] focus-within:bg-white focus-within:ring-2 focus-within:ring-[#b83808]/15 transition-all">
-                  <User className="w-5 h-5 text-slate-400 stroke-[1.8] shrink-0" />
+                <div className="flex items-center gap-3 bg-[#fffbf8] border border-[#f3e8df] rounded-2xl px-4 py-3 focus-within:border-[#b83808] focus-within:bg-white focus-within:ring-2 focus-within:ring-[#b83808]/15 transition-all">
+                  <User className="w-4 h-4 text-slate-400 stroke-[1.8] shrink-0" />
                   <input
                     type="text"
                     value={parentName}
                     onChange={(e) => {
                       setParentName(e.target.value);
-                      setError('');
+                      setError(null);
                     }}
-                    placeholder="Folake Adeyemi"
+                    placeholder="e.g. Mrs Okafor"
                     className="w-full text-sm font-semibold text-slate-800 bg-transparent outline-none placeholder:text-slate-400"
                   />
                 </div>
@@ -138,38 +173,58 @@ export const ParentRegisterPage: React.FC = () => {
               {/* Field 2: Email */}
               <div>
                 <label className="block text-[11px] font-extrabold text-slate-700 uppercase tracking-wider mb-1.5">
-                  Email Address
+                  Email Address <span className="text-slate-400 font-normal">(or Phone)</span>
                 </label>
-                <div className="flex items-center gap-3 bg-[#fffbf8] border border-[#f3e8df] rounded-2xl px-4 py-3.5 focus-within:border-[#b83808] focus-within:bg-white focus-within:ring-2 focus-within:ring-[#b83808]/15 transition-all">
-                  <Mail className="w-5 h-5 text-slate-400 stroke-[1.8] shrink-0" />
+                <div className="flex items-center gap-3 bg-[#fffbf8] border border-[#f3e8df] rounded-2xl px-4 py-3 focus-within:border-[#b83808] focus-within:bg-white focus-within:ring-2 focus-within:ring-[#b83808]/15 transition-all">
+                  <Mail className="w-4 h-4 text-slate-400 stroke-[1.8] shrink-0" />
                   <input
                     type="email"
                     value={email}
                     onChange={(e) => {
                       setEmail(e.target.value);
-                      setError('');
+                      setError(null);
                     }}
-                    placeholder="folake.adeyemi@gmail.com"
+                    placeholder="parent@example.com"
                     className="w-full text-sm font-semibold text-slate-800 bg-transparent outline-none placeholder:text-slate-400"
                   />
                 </div>
               </div>
 
-              {/* Field 3: Password */}
+              {/* Field 3: Phone */}
               <div>
                 <label className="block text-[11px] font-extrabold text-slate-700 uppercase tracking-wider mb-1.5">
-                  Create Parent Password
+                  Phone Number <span className="text-slate-400 font-normal">(optional)</span>
                 </label>
-                <div className="flex items-center gap-3 bg-[#fffbf8] border border-[#f3e8df] rounded-2xl px-4 py-3.5 focus-within:border-[#b83808] focus-within:bg-white focus-within:ring-2 focus-within:ring-[#b83808]/15 transition-all">
-                  <Lock className="w-5 h-5 text-slate-400 stroke-[1.8] shrink-0" />
+                <div className="flex items-center gap-3 bg-[#fffbf8] border border-[#f3e8df] rounded-2xl px-4 py-3 focus-within:border-[#b83808] focus-within:bg-white focus-within:ring-2 focus-within:ring-[#b83808]/15 transition-all">
+                  <Phone className="w-4 h-4 text-slate-400 stroke-[1.8] shrink-0" />
+                  <input
+                    type="tel"
+                    value={phone}
+                    onChange={(e) => {
+                      setPhone(e.target.value);
+                      setError(null);
+                    }}
+                    placeholder="08012345678"
+                    className="w-full text-sm font-semibold text-slate-800 bg-transparent outline-none placeholder:text-slate-400"
+                  />
+                </div>
+              </div>
+
+              {/* Field 4: Password */}
+              <div>
+                <label className="block text-[11px] font-extrabold text-slate-700 uppercase tracking-wider mb-1.5">
+                  Password *
+                </label>
+                <div className="flex items-center gap-3 bg-[#fffbf8] border border-[#f3e8df] rounded-2xl px-4 py-3 focus-within:border-[#b83808] focus-within:bg-white focus-within:ring-2 focus-within:ring-[#b83808]/15 transition-all">
+                  <Lock className="w-4 h-4 text-slate-400 stroke-[1.8] shrink-0" />
                   <input
                     type={showPassword ? 'text' : 'password'}
                     value={password}
                     onChange={(e) => {
                       setPassword(e.target.value);
-                      setError('');
+                      setError(null);
                     }}
-                    placeholder="••••••••••••"
+                    placeholder="At least 6 characters"
                     className="w-full text-sm font-semibold text-slate-800 bg-transparent outline-none placeholder:text-slate-400"
                   />
                   <button
@@ -179,9 +234,9 @@ export const ParentRegisterPage: React.FC = () => {
                     aria-label={showPassword ? 'Hide password' : 'Show password'}
                   >
                     {showPassword ? (
-                      <EyeOff className="w-5 h-5 stroke-[1.8]" />
+                      <EyeOff className="w-4 h-4 stroke-[1.8]" />
                     ) : (
-                      <Eye className="w-5 h-5 stroke-[1.8]" />
+                      <Eye className="w-4 h-4 stroke-[1.8]" />
                     )}
                   </button>
                 </div>
@@ -189,20 +244,42 @@ export const ParentRegisterPage: React.FC = () => {
 
               {/* Error Message */}
               {error && (
-                <p className="text-xs font-bold text-rose-600 mt-1">{error}</p>
+                <div className="flex items-center gap-2 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-bold animate-shake">
+                  <AlertCircle className="w-4 h-4 shrink-0" />
+                  <span>{error}</span>
+                </div>
               )}
             </div>
 
-            {/* ── OR QUICK LINK Divider ── */}
+            {/* Submit Button */}
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="w-full py-4 px-6 rounded-2xl bg-[#a73605] hover:bg-[#8e2e04] active:scale-[0.99] disabled:opacity-60 text-white font-extrabold text-base shadow-lg shadow-[#a73605]/25 flex items-center justify-center gap-2 transition-all cursor-pointer mt-1"
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  <span>Creating Account...</span>
+                </>
+              ) : (
+                <>
+                  <span>Register Account</span>
+                  <ArrowRight className="w-5 h-5 stroke-[2.5]" />
+                </>
+              )}
+            </button>
+
+            {/* Quick divider */}
             <div className="flex items-center gap-3 my-1">
               <div className="flex-1 h-[1px] bg-slate-200/90" />
               <span className="text-[10px] font-extrabold text-slate-400 tracking-widest uppercase">
-                Or Quick Link
+                Or
               </span>
               <div className="flex-1 h-[1px] bg-slate-200/90" />
             </div>
 
-            {/* ── Continue with Google ── */}
+            {/* Continue with Google */}
             <button
               type="button"
               onClick={handleGoogleSignIn}
@@ -228,21 +305,17 @@ export const ParentRegisterPage: React.FC = () => {
               </svg>
               <span>Continue with Google</span>
             </button>
-
-            {/* ── Primary Continue CTA ── */}
-            <button
-              type="submit"
-              className="w-full py-4 px-6 rounded-2xl bg-[#a73605] hover:bg-[#8e2e04] active:scale-[0.99] text-white font-extrabold text-base shadow-lg shadow-[#a73605]/25 flex items-center justify-center gap-2 transition-all cursor-pointer mt-1"
-            >
-              <span>Continue</span>
-              <ArrowRight className="w-5 h-5 stroke-[2.5]" />
-            </button>
-
-            {/* Terms text */}
-            <p className="text-[11px] text-slate-400 text-center font-medium leading-relaxed mt-1">
-              By continuing, you agree to IMOLE Parent Terms &amp; Safety Policy.
-            </p>
           </form>
+
+          {/* Already have account */}
+          <div className="flex flex-col items-center text-center gap-1.5 pt-6 pb-2 text-xs text-slate-500">
+            <p>
+              Already registered?{' '}
+              <Link to="/parent/login" className="font-bold text-[#a73605] hover:underline">
+                Log in here
+              </Link>
+            </p>
+          </div>
         </div>
 
         <div className="h-4" />

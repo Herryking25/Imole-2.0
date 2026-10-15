@@ -10,7 +10,7 @@ export const WelcomeScreen: React.FC = () => {
   const handleStart = () => {
     if (isOnboarded) {
       navigate('/child/dashboard');
-    } else {
+    } else {  
       navigate('/child/about-yourself');
     }
   };

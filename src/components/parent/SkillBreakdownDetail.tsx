@@ -10,6 +10,7 @@ import {
   Filter,
 } from 'lucide-react';
 import { useApp } from '../../hooks/useApp';
+import { useParent } from '../../hooks/useParent';
 import { SkillBreakdownService, type SkillResponseItem } from '../../services/skillBreakdownService';
 import { SKILLS_DATA, SKILL_LIST } from '../../data/skills';
 import type { SkillId } from '../../types/skills';
@@ -24,8 +25,9 @@ export const SkillBreakdownDetail: React.FC<SkillBreakdownDetailProps> = ({
   const navigate = useNavigate();
   const { skillId: routeSkillId } = useParams<{ skillId?: string }>();
   const { profile } = useApp();
+  const { selectedChild } = useParent();
 
-  const childName = profile?.name || profile?.firstName || 'Tobi';
+  const childName = selectedChild?.name || profile?.name || profile?.firstName || 'Tobi';
 
   // Validate skillId from URL or prop
   const validSkillId: SkillId = (

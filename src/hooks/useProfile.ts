@@ -5,16 +5,20 @@ import type { ProfileSetupPayload, ChildProfile } from '../types/profile';
 export function useProfile() {
   const { profile, isOnboarded, refreshState, resetChildProfile } = useApp();
 
-  const createProfile = (payload: ProfileSetupPayload): ChildProfile => {
-    const created = ProfileService.createProfile(payload);
+  const createProfile = async (payload: ProfileSetupPayload): Promise<ChildProfile> => {
+    const created = await ProfileService.createProfile(payload);
     refreshState();
     return created;
   };
 
-  const updateProfile = (partial: Partial<ChildProfile>): ChildProfile | null => {
-    const updated = ProfileService.updateProfile(partial);
+  const updateProfile = async (partial: Partial<ChildProfile>): Promise<ChildProfile | null> => {
+    const updated = await ProfileService.updateProfile(partial);
     refreshState();
     return updated;
+  };
+
+  const generateLinkCode = async (): Promise<{ linkCode: string; expiresInSeconds: number }> => {
+    return ProfileService.generateLinkCode();
   };
 
   return {
@@ -22,7 +26,7 @@ export function useProfile() {
     isOnboarded,
     createProfile,
     updateProfile,
+    generateLinkCode,
     resetChildProfile,
   };
 }
-

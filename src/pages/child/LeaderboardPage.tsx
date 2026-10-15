@@ -3,119 +3,39 @@ import { useApp } from '../../hooks/useApp';
 import { useLeaderboard } from '../../hooks/useLeaderboard';
 import { getAvatarEmoji } from '../../utils/avatarUtils';
 
-interface LeaderboardUser {
-  rank: number;
-  name: string;
-  points: number;
-  streak?: number;
-  initials?: string;
-  avatarId?: string;
-  avatarBg?: string;
-  avatarTextColor?: string;
-  isCurrentUser?: boolean;
-}
-
 export const LeaderboardPage: React.FC = () => {
   const { profile, streak, progress } = useApp();
-  const { currentUserEntry } = useLeaderboard();
+  const { entries, currentUserEntry, period, setPeriod, isLoading } = useLeaderboard();
 
-  const userRank = currentUserEntry?.rank ?? 8;
-  const userStreak = streak.currentStreak > 0 ? streak.currentStreak : 7;
-  const userPoints = progress.totalPoints > 0 ? progress.totalPoints : 32;
+  const userRank = currentUserEntry?.rank ?? 1;
+  const userStreak = currentUserEntry?.streak ?? (streak.currentStreak > 0 ? streak.currentStreak : 1);
+  const userPoints = currentUserEntry?.points ?? (progress.totalPoints > 0 ? progress.totalPoints : 0);
 
-  // Top 3 Podium
-  const topThree = [
-    {
-      rank: 2,
-      name: 'SmartOne',
-      points: 120,
-      avatarEmoji: '👦🏻',
-      podiumBg: 'bg-[#e2e8f0]/80',
-      borderColor: 'border-slate-200/80',
-      podiumHeight: 'h-32',
-      badgeBg: 'bg-white text-slate-700',
-    },
-    {
-      rank: 1,
-      name: 'Champ',
-      points: 150,
-      avatarEmoji: '👦🏾',
-      podiumBg: 'bg-[#fef9c3]',
-      borderColor: 'border-amber-200/80',
-      podiumHeight: 'h-40',
-      badgeBg: 'bg-white text-amber-900',
-      hasCrown: true,
-    },
-    {
-      rank: 3,
-      name: 'BrightKid',
-      points: 100,
-      avatarEmoji: '👧🏽',
-      podiumBg: 'bg-[#fee2e2]/70',
-      borderColor: 'border-rose-200/80',
-      podiumHeight: 'h-28',
-      badgeBg: 'bg-white text-rose-800',
-    },
-  ];
+  // Top 3 from entries (fallback gracefully if fewer than 3)
+  const top1 = entries[0] || {
+    rank: 1,
+    anonymousName: 'Champ',
+    points: 150,
+    streak: 5,
+    avatarId: 'avatar-eagle',
+  };
+  const top2 = entries[1] || {
+    rank: 2,
+    anonymousName: 'SmartOne',
+    points: 120,
+    streak: 4,
+    avatarId: 'avatar-lion',
+  };
+  const top3 = entries[2] || {
+    rank: 3,
+    anonymousName: 'BrightKid',
+    points: 100,
+    streak: 3,
+    avatarId: 'avatar-cheetah',
+  };
 
-  // Ranks 4 to 10 list
-  const listUsers: LeaderboardUser[] = [
-    {
-      rank: 4,
-      name: 'FastLearner',
-      points: 90,
-      initials: 'FL',
-      avatarBg: 'bg-slate-100',
-      avatarTextColor: 'text-slate-600',
-    },
-    {
-      rank: 5,
-      name: 'StarReader',
-      points: 85,
-      initials: 'SR',
-      avatarBg: 'bg-amber-100',
-      avatarTextColor: 'text-amber-800',
-    },
-    {
-      rank: 6,
-      name: 'MathWhiz',
-      points: 78,
-      initials: 'MW',
-      avatarBg: 'bg-rose-100',
-      avatarTextColor: 'text-rose-800',
-    },
-    {
-      rank: 7,
-      name: 'SciHero',
-      points: 65,
-      initials: 'SH',
-      avatarBg: 'bg-red-100',
-      avatarTextColor: 'text-red-800',
-    },
-    {
-      rank: 8,
-      name: 'You',
-      points: userPoints,
-      streak: userStreak,
-      isCurrentUser: true,
-    },
-    {
-      rank: 9,
-      name: 'CoolCat',
-      points: 28,
-      initials: 'CC',
-      avatarBg: 'bg-orange-100',
-      avatarTextColor: 'text-orange-800',
-    },
-    {
-      rank: 10,
-      name: 'Explorer',
-      points: 25,
-      initials: 'EX',
-      avatarBg: 'bg-stone-100',
-      avatarTextColor: 'text-stone-800',
-    },
-  ];
+  // Remaining entries (ranks 4+)
+  const restEntries = entries.slice(3);
 
   return (
     <div className="flex-1 min-h-screen bg-[#faf8f5]/50 md:bg-white flex flex-col py-4 px-4 sm:px-8 pb-28 sm:pb-8 animate-in fade-in duration-300">
@@ -129,9 +49,37 @@ export const LeaderboardPage: React.FC = () => {
           </h1>
         </div>
 
+        {/* ── Period Switcher (Weekly vs All Time) ── */}
+        <div className="flex items-center bg-slate-100/90 p-1 rounded-full border border-slate-200/60 shadow-2xs">
+          <button
+            onClick={() => setPeriod('weekly')}
+            className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
+              period === 'weekly'
+                ? 'bg-white text-[#a73605] shadow-xs'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            Weekly
+          </button>
+          <button
+            onClick={() => setPeriod('all_time')}
+            className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
+              period === 'all_time'
+                ? 'bg-white text-[#a73605] shadow-xs'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            All Time
+          </button>
+        </div>
+
         {/* ── Status Pill ── */}
         <div className="inline-flex items-center justify-center bg-[#a73605] text-white text-xs sm:text-sm font-bold px-6 py-2 rounded-full shadow-sm">
-          You&apos;re #{userRank}! Keep going!
+          {isLoading ? (
+            <span>Updating champion ranks... 🌟</span>
+          ) : (
+            <span>You&apos;re #{userRank}! Keep shining! 🔥</span>
+          )}
         </div>
 
         {/* ── Top 3 Podium ── */}
@@ -140,43 +88,41 @@ export const LeaderboardPage: React.FC = () => {
           <div className="flex flex-col items-center relative">
             <div className="relative -mb-3 z-10">
               <div className="w-13 h-13 rounded-full bg-sky-100 border-2 border-white shadow-sm flex items-center justify-center text-2xl">
-                {topThree[0].avatarEmoji}
+                {top2.avatarId ? getAvatarEmoji(top2.avatarId) : '👦🏻'}
               </div>
               <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-5 h-5 rounded-full bg-white shadow-xs text-[11px] font-black text-slate-700 flex items-center justify-center border border-slate-200">
                 2
               </span>
             </div>
-            <div
-              className={`w-full ${topThree[0].podiumHeight} ${topThree[0].podiumBg} border ${topThree[0].borderColor} rounded-2xl flex flex-col items-center justify-end pb-3.5 pt-6 shadow-xs`}
-            >
+            <div className="w-full h-32 bg-[#e2e8f0]/80 border border-slate-200/80 rounded-2xl flex flex-col items-center justify-end pb-3.5 pt-6 shadow-xs">
               <p className="text-xs sm:text-sm font-bold text-slate-800 truncate max-w-[80px]">
-                {topThree[0].name}
+                {top2.anonymousName.replace(' (You)', '')}
               </p>
               <p className="text-xs font-semibold text-slate-500 mt-0.5">
-                {topThree[0].points} pt
+                {top2.points} pt
               </p>
             </div>
           </div>
 
           {/* Rank 1 (Center) */}
-          <div className="flex flex-col items-center relative -mt-4">
+          <div className="flex flex-col items-center relative">
+            <div className="absolute -top-7.5 z-20 text-2xl filter drop-shadow-xs animate-bounce">
+              👑
+            </div>
             <div className="relative -mb-3 z-10">
-              <span className="absolute -top-4 right-0 text-lg animate-bounce">👑</span>
-              <div className="w-15 h-15 rounded-full bg-amber-100 border-2 border-white shadow-md flex items-center justify-center text-3xl">
-                {topThree[1].avatarEmoji}
+              <div className="w-15 h-15 rounded-full bg-amber-200 border-2 border-white shadow-md flex items-center justify-center text-3xl">
+                {top1.avatarId ? getAvatarEmoji(top1.avatarId) : '👦🏾'}
               </div>
-              <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-6 h-6 rounded-full bg-white shadow-xs text-xs font-black text-amber-900 flex items-center justify-center border border-amber-300">
+              <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-5 h-5 rounded-full bg-white shadow-xs text-[11px] font-black text-amber-900 flex items-center justify-center border border-amber-300">
                 1
               </span>
             </div>
-            <div
-              className={`w-full ${topThree[1].podiumHeight} ${topThree[1].podiumBg} border ${topThree[1].borderColor} rounded-2xl flex flex-col items-center justify-end pb-4 pt-8 shadow-xs`}
-            >
-              <p className="text-sm font-extrabold text-slate-900 truncate max-w-[90px]">
-                {topThree[1].name}
+            <div className="w-full h-40 bg-[#fef9c3] border border-amber-200/80 rounded-2xl flex flex-col items-center justify-end pb-4 pt-8 shadow-xs">
+              <p className="text-xs sm:text-sm font-bold text-slate-900 truncate max-w-[85px]">
+                {top1.anonymousName.replace(' (You)', '')}
               </p>
-              <p className="text-xs font-bold text-[#8a2908] mt-0.5">
-                {topThree[1].points} pt
+              <p className="text-xs font-bold text-amber-800 mt-0.5">
+                {top1.points} pt
               </p>
             </div>
           </div>
@@ -185,32 +131,30 @@ export const LeaderboardPage: React.FC = () => {
           <div className="flex flex-col items-center relative">
             <div className="relative -mb-3 z-10">
               <div className="w-13 h-13 rounded-full bg-rose-100 border-2 border-white shadow-sm flex items-center justify-center text-2xl">
-                {topThree[2].avatarEmoji}
+                {top3.avatarId ? getAvatarEmoji(top3.avatarId) : '👧🏽'}
               </div>
               <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-5 h-5 rounded-full bg-white shadow-xs text-[11px] font-black text-rose-800 flex items-center justify-center border border-rose-200">
                 3
               </span>
             </div>
-            <div
-              className={`w-full ${topThree[2].podiumHeight} ${topThree[2].podiumBg} border ${topThree[2].borderColor} rounded-2xl flex flex-col items-center justify-end pb-3 pt-5 shadow-xs`}
-            >
+            <div className="w-full h-28 bg-[#fee2e2]/70 border border-rose-200/80 rounded-2xl flex flex-col items-center justify-end pb-3 pt-5 shadow-xs">
               <p className="text-xs sm:text-sm font-bold text-slate-800 truncate max-w-[80px]">
-                {topThree[2].name}
+                {top3.anonymousName.replace(' (You)', '')}
               </p>
               <p className="text-xs font-semibold text-slate-500 mt-0.5">
-                {topThree[2].points} pt
+                {top3.points} pt
               </p>
             </div>
           </div>
         </div>
 
-        {/* ── Ranks 4 to 10 Container ── */}
+        {/* ── Ranks 4+ Container ── */}
         <div className="w-full bg-white rounded-3xl border border-rose-100/60 shadow-xs p-3 sm:p-4 flex flex-col gap-2 text-left">
-          {listUsers.map((item) => {
+          {restEntries.map((item) => {
             if (item.isCurrentUser) {
               return (
                 <div
-                  key={item.rank}
+                  key={`${item.rank}-${item.anonymousName}`}
                   className="w-full bg-[#a73605] text-white rounded-2xl p-3 px-4 flex items-center justify-between shadow-md select-none transition-transform active:scale-[0.99]"
                 >
                   <div className="flex items-center gap-3">
@@ -231,39 +175,40 @@ export const LeaderboardPage: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="text-right">
-                    <span className="text-base font-black text-white">
-                      {item.points} pt
-                    </span>
-                  </div>
+                  <span className="text-sm font-black text-white">
+                    {item.points || userPoints} pt
+                  </span>
                 </div>
               );
             }
 
             return (
               <div
-                key={item.rank}
-                className="w-full flex items-center justify-between p-2 px-2.5 rounded-xl hover:bg-slate-50/80 transition-colors"
+                key={`${item.rank}-${item.anonymousName}`}
+                className="w-full bg-slate-50/80 hover:bg-slate-100/80 rounded-2xl p-3 px-4 flex items-center justify-between transition-colors select-none"
               >
                 <div className="flex items-center gap-3">
-                  <span className="text-xs font-semibold text-slate-400 w-4 text-center">
+                  <span className="text-xs font-bold text-slate-400 w-4 text-center">
                     {item.rank}
                   </span>
-                  <div
-                    className={`w-9 h-9 rounded-full ${item.avatarBg} ${item.avatarTextColor} flex items-center justify-center text-xs font-black shrink-0`}
-                  >
-                    {item.initials}
+                  <div className="w-10 h-10 rounded-full bg-white border border-slate-200 flex items-center justify-center text-lg shrink-0">
+                    {item.avatarId ? getAvatarEmoji(item.avatarId) : '⭐'}
                   </div>
-                  <span className="text-sm font-bold text-slate-800">
-                    {item.name}
-                  </span>
+                  <div>
+                    <p className="text-sm font-bold text-slate-800 leading-tight">
+                      {item.anonymousName}
+                    </p>
+                    {item.streak > 0 && (
+                      <span className="text-[10px] font-semibold text-slate-400">
+                        🔥 {item.streak} day streak
+                      </span>
+                    )}
+                  </div>
                 </div>
 
-                <div className="text-right">
-                  <span className="text-xs font-semibold text-slate-500">
-                    {item.points} pt
-                  </span>
-                </div>
+                <span className="text-xs font-bold text-slate-500">
+                  {item.points} pt
+                </span>
               </div>
             );
           })}

@@ -6,4 +6,5 @@ export * from './useStreak';
 export * from './useProgress';
 export * from './useLeaderboard';
 export * from './useAnalytics';
+export * from './useParent';
 

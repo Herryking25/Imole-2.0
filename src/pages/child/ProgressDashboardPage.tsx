@@ -3,40 +3,50 @@ import { useProgress } from '../../hooks/useProgress';
 import { useApp } from '../../hooks/useApp';
 
 export const ProgressDashboardPage: React.FC = () => {
-  const { totalPoints, totalCompleted } = useProgress();
+  const { totalPoints, totalCompleted, skills } = useProgress();
   const { streak } = useApp();
 
-  // Metrics values (with mockup defaults if profile is fresh)
-  const displayCompleted = totalCompleted > 0 ? totalCompleted : 22;
-  const displayStreak = streak.currentStreak > 0 ? streak.currentStreak : 9;
-  const displayPoints = totalPoints > 0 ? totalPoints.toLocaleString() : '1,162';
-  const displayAvgScore = '72%';
+  // Metrics values
+  const displayCompleted = totalCompleted;
+  const displayStreak = streak.currentStreak;
+  const displayPoints = totalPoints.toLocaleString();
+  const displayAvgScore = totalCompleted > 0 ? `${Math.round((totalPoints / (totalCompleted * 10)) * 100)}%` : '0%';
+
+  // Calculate skill points and percentages
+  const mathPoints = skills['mental-math-logic']?.points ?? 0;
+  const speakingPoints = skills['persuasive-speaking']?.points ?? 0;
+  const financePoints = skills['financial-literacy']?.points ?? 0;
+  const creativityPoints = skills['creative-problem-solving']?.points ?? 0;
+  const eqPoints = skills['emotional-intelligence']?.points ?? 0;
+
+  // Compute percentage (scaled against 100 points mastery target per level)
+  const calcPct = (pts: number) => Math.min(100, Math.max(10, Math.round((pts / 50) * 100)));
 
   // Skills breakdown
   const skillsBreakdown = [
     {
       name: 'Maths',
-      percentage: 80,
+      percentage: totalCompleted > 0 ? calcPct(mathPoints) : 80,
       barColor: 'bg-[#f59e0b]',
     },
     {
       name: 'Speaking',
-      percentage: 20,
+      percentage: totalCompleted > 0 ? calcPct(speakingPoints) : 20,
       barColor: 'bg-[#ea580c]',
     },
     {
       name: 'Finance',
-      percentage: 20,
+      percentage: totalCompleted > 0 ? calcPct(financePoints) : 20,
       barColor: 'bg-[#ea580c]',
     },
     {
       name: 'Creativity',
-      percentage: 20,
+      percentage: totalCompleted > 0 ? calcPct(creativityPoints) : 40,
       barColor: 'bg-[#0d9488]',
     },
     {
       name: 'Emotional IQ',
-      percentage: 20,
+      percentage: totalCompleted > 0 ? calcPct(eqPoints) : 20,
       barColor: 'bg-[#0d9488]',
     },
   ];

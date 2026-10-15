@@ -1,22 +1,98 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Award, Download, Lock, CheckCircle2, Printer, X, Sparkles, Banknote, Calculator, Mic, Lightbulb, ArrowLeft, HeartHandshake } from 'lucide-react';
+import {
+  Award,
+  Download,
+  Lock,
+  CheckCircle2,
+  Printer,
+  X,
+  Sparkles,
+  Banknote,
+  Calculator,
+  Mic,
+  Lightbulb,
+  ArrowLeft,
+  HeartHandshake,
+  RefreshCw,
+} from 'lucide-react';
 import * as htmlToImage from 'html-to-image';
 import { CertificateService } from '../../services/certificateService';
 import type { Certificate } from '../../types/certificate';
 import { ImoleLogo } from '../common/ImoleLogo';
+import { useParent } from '../../hooks/useParent';
 
 export const CertificateCard: React.FC = () => {
   const navigate = useNavigate();
-  const allCerts = CertificateService.getAllCertificates();
+  const { selectedChild, certificates: backendCertificates, isLoadingCertificates, refreshCertificates } = useParent();
+
   const [selectedCert, setSelectedCert] = useState<Certificate | null>(null);
   const [isDownloading, setIsDownloading] = useState(false);
   const [downloadSuccess, setDownloadSuccess] = useState<string | null>(null);
   const printableCertRef = useRef<HTMLDivElement>(null);
 
+  const activeChildName = selectedChild?.name || 'Ada';
+
+  // Merge backend certificates with local certificates
+  const allCerts: Certificate[] = useMemo(() => {
+    const localCerts = CertificateService.getAllCertificates();
+
+    if (!backendCertificates || backendCertificates.length === 0) {
+      return localCerts.map((c) => ({
+        ...c,
+        childName: activeChildName,
+      }));
+    }
+
+    // Map backend certificates
+    const remoteCerts: Certificate[] = backendCertificates.map((bc) => {
+      const slug = bc.skillId?.slug || 'mental_math';
+      const isFinance = slug.includes('fin');
+      const isSpeaking = slug.includes('speak');
+      const isProblem = slug.includes('problem');
+      const isEq = slug.includes('eq') || slug.includes('emotional');
+
+      let iconType: 'math' | 'finance' | 'speaking' | 'problem-solving' | 'eq' = 'math';
+      if (isFinance) iconType = 'finance';
+      else if (isSpeaking) iconType = 'speaking';
+      else if (isProblem) iconType = 'problem-solving';
+      else if (isEq) iconType = 'eq';
+
+      const formattedDate = bc.issuedAt
+        ? new Intl.DateTimeFormat('en-US', {
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric',
+          }).format(new Date(bc.issuedAt))
+        : 'Oct 15, 2026';
+
+      return {
+        id: bc._id,
+        skillId: slug as any,
+        title: bc.title || 'Champion Certificate',
+        childName: activeChildName,
+        issueDate: bc.issuedAt ? bc.issuedAt.split('T')[0] : '2026-10-15',
+        completedDateFormatted: formattedDate,
+        badgeIcon: '📜',
+        iconType,
+        issuer: 'IMOLE Life Skills Academy',
+        isLocked: false,
+        description: `Demonstrated exceptional capability and mastery in ${bc.skillId?.name || 'practical life skills'} through daily challenges on IMOLE.`,
+      };
+    });
+
+    // Merge: Put earned remote certificates first, then any unique remaining local ones
+    const seenTitles = new Set(remoteCerts.map((r) => r.title.toLowerCase()));
+    const remainingLocal = localCerts
+      .filter((l) => !seenTitles.has(l.title.toLowerCase()))
+      .map((c) => ({ ...c, childName: activeChildName }));
+
+    return [...remoteCerts, ...remainingLocal];
+  }, [backendCertificates, activeChildName]);
+
   const earnedCount = allCerts.filter((c) => !c.isLocked).length;
   const totalCount = allCerts.length;
-  const progressPercent = Math.round((earnedCount / totalCount) * 100);
+  const progressPercent = Math.round((earnedCount / Math.max(1, totalCount)) * 100);
 
   const handleDownloadSingleCert = async (cert: Certificate, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
@@ -68,19 +144,31 @@ export const CertificateCard: React.FC = () => {
         );
       case 'speaking':
         return (
-          <div className={`w-12 h-12 rounded-2xl ${isLocked ? 'bg-[#fce6dd] text-[#8c3c24]' : 'bg-[#feefb3] text-[#9a6208]'} flex items-center justify-center shadow-2xs shrink-0`}>
+          <div
+            className={`w-12 h-12 rounded-2xl ${
+              isLocked ? 'bg-[#fce6dd] text-[#8c3c24]' : 'bg-[#feefb3] text-[#9a6208]'
+            } flex items-center justify-center shadow-2xs shrink-0`}
+          >
             <Mic className="w-6 h-6 stroke-[2.2]" />
           </div>
         );
       case 'problem-solving':
         return (
-          <div className={`w-12 h-12 rounded-2xl ${isLocked ? 'bg-[#fce6dd] text-[#8c3c24]' : 'bg-[#feefb3] text-[#9a6208]'} flex items-center justify-center shadow-2xs shrink-0`}>
+          <div
+            className={`w-12 h-12 rounded-2xl ${
+              isLocked ? 'bg-[#fce6dd] text-[#8c3c24]' : 'bg-[#feefb3] text-[#9a6208]'
+            } flex items-center justify-center shadow-2xs shrink-0`}
+          >
             <Lightbulb className="w-6 h-6 stroke-[2.2]" />
           </div>
         );
       case 'eq':
         return (
-          <div className={`w-12 h-12 rounded-2xl ${isLocked ? 'bg-[#fce6dd] text-[#8c3c24]' : 'bg-[#feefb3] text-[#9a6208]'} flex items-center justify-center shadow-2xs shrink-0`}>
+          <div
+            className={`w-12 h-12 rounded-2xl ${
+              isLocked ? 'bg-[#fce6dd] text-[#8c3c24]' : 'bg-[#feefb3] text-[#9a6208]'
+            } flex items-center justify-center shadow-2xs shrink-0`}
+          >
             <HeartHandshake className="w-6 h-6 stroke-[2.2]" />
           </div>
         );
@@ -95,10 +183,36 @@ export const CertificateCard: React.FC = () => {
 
   return (
     <div className="w-full max-w-xl mx-auto flex flex-col font-sans select-none pb-12">
-      {/* ── Screen Title ── */}
-      <h1 className="text-2xl sm:text-3xl font-bold text-[#9c3205] text-center mb-6 tracking-tight">
-        Certificates
-      </h1>
+      {/* ── Screen Title & Sync ── */}
+      <div className="flex items-center justify-between mb-6">
+        <button
+          type="button"
+          onClick={() => navigate('/parent')}
+          className="inline-flex items-center gap-1.5 text-xs font-bold text-[#a73605] hover:text-[#8e2e04] cursor-pointer"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          <span>Back</span>
+        </button>
+
+        <h1 className="text-xl sm:text-2xl font-black text-[#9c3205] tracking-tight">
+          Certificates
+        </h1>
+
+        <button
+          type="button"
+          onClick={() => refreshCertificates()}
+          disabled={isLoadingCertificates}
+          className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-white border border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-50 active:scale-95 transition-all shadow-2xs cursor-pointer"
+          title="Refresh certificates from backend"
+        >
+          <RefreshCw
+            className={`w-3.5 h-3.5 text-[#a73605] ${
+              isLoadingCertificates ? 'animate-spin' : ''
+            }`}
+          />
+          <span className="hidden sm:inline">Refresh</span>
+        </button>
+      </div>
 
       {/* ── Toast Notification for Downloads ── */}
       {downloadSuccess && (
@@ -116,9 +230,12 @@ export const CertificateCard: React.FC = () => {
         </div>
 
         {/* Count text */}
-        <h2 className="text-lg sm:text-xl font-bold text-slate-900 mb-4">
+        <h2 className="text-lg sm:text-xl font-bold text-slate-900 mb-1">
           {earnedCount} of {totalCount} certificates earned
         </h2>
+        <p className="text-xs text-slate-500 mb-4">
+          Credentials awarded to {activeChildName} for completing quests
+        </p>
 
         {/* Horizontal Progress Bar */}
         <div className="w-full h-2.5 bg-[#e5e7eb] rounded-full overflow-hidden">
@@ -156,8 +273,9 @@ export const CertificateCard: React.FC = () => {
                     <span>{cert.completedDateFormatted || `Locked (${cert.lockRequirement || 'Requires Level 5'})`}</span>
                   </p>
                 ) : (
-                  <p className="text-xs sm:text-sm font-medium text-slate-500 mt-0.5">
-                    Completed on {cert.completedDateFormatted || cert.issueDate}
+                  <p className="text-xs sm:text-sm font-medium text-emerald-700 mt-0.5 flex items-center gap-1">
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    <span>Awarded on {cert.completedDateFormatted || cert.issueDate}</span>
                   </p>
                 )}
               </div>
@@ -186,18 +304,6 @@ export const CertificateCard: React.FC = () => {
             )}
           </div>
         ))}
-      </div>
-
-      {/* ── Back to Dashboard Bottom Link ── */}
-      <div className="pt-8 pb-4 text-center">
-        <button
-          type="button"
-          onClick={() => navigate('/parent')}
-          className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold text-[#a33e0e] hover:text-[#802c06] hover:underline transition-all cursor-pointer py-2"
-        >
-          <ArrowLeft className="w-4 h-4 stroke-[2.5]" />
-          <span>Back to Dashboard</span>
-        </button>
       </div>
 
       {/* ── Interactive Printable & Downloadable Certificate Modal ── */}
@@ -313,4 +419,3 @@ export const CertificateCard: React.FC = () => {
 };
 
 export default CertificateCard;
-
