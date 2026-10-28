@@ -1,75 +1,125 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Loader2, Sparkles } from 'lucide-react';
 import { useProfile } from '../../hooks/useProfile';
 import { useLanguage } from '../../hooks/useLanguage';
 import type { SupportedLanguage } from '../../types/i18n';
 import type { AgeGroup } from '../../types/profile';
+import { generateAnonymousNickname } from '../../utils/avatarUtils';
 
 export const AboutYourselfPage: React.FC = () => {
   const navigate = useNavigate();
-  const { profile, createProfile } = useProfile();
+  const { profile, createProfile, updateProfile } = useProfile();
   const { language, setLanguage } = useLanguage();
 
-  const [name, setName] = useState(
-    profile?.name || profile?.firstName ? `${profile.firstName} ${profile.lastName || ''}`.trim() : 'Tolu Olawale'
+  // Initial state derived from existing profile if available
+  const [firstName, setFirstName] = useState(
+    profile?.firstName || (profile?.name ? profile.name.split(' ')[0] : '')
   );
-  const [selectedAgeGroup, setSelectedAgeGroup] = useState<string>(
-    profile?.ageGroup === '6 - 9' ? '8 - 10' : profile?.ageGroup === '14 - 17' ? '14 - 16' : '8 - 10'
+  const [lastName, setLastName] = useState(
+    profile?.lastName || (profile?.name ? profile.name.split(' ').slice(1).join(' ') : '')
   );
+  const [username, setUsername] = useState(
+    profile?.username || profile?.anonymousNickname || ''
+  );
+  const [hasCustomUsername, setHasCustomUsername] = useState(
+    Boolean(profile?.username || profile?.anonymousNickname)
+  );
+
+  const [selectedAgeGroup, setSelectedAgeGroup] = useState<AgeGroup>(
+    (profile?.ageGroup as AgeGroup) || '6 - 9'
+  );
+
   const [selectedLanguage, setSelectedLanguage] = useState<SupportedLanguage>(
     (profile?.preferredLanguage as SupportedLanguage) || language || 'pcm'
   );
+
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const ageGroups = ['8 - 10', '11 - 13', '14 - 16'];
+  // Age group choices matching design exactly: "6 - 9", "10 -13", "14 - 17"
+  const ageGroupOptions: { id: AgeGroup; label: string; defaultAge: number }[] = [
+    { id: '6 - 9', label: '6 - 9', defaultAge: 8 },
+    { id: '10 - 13', label: '10 -13', defaultAge: 11 },
+    { id: '14 - 17', label: '14 - 17', defaultAge: 15 },
+  ];
 
-  const languages: { id: SupportedLanguage; label: string }[] = [
-    { id: 'en', label: 'English' },
+  // Preferred language choices in exact order from design: Pidgin, English, Yoruba
+  const languageOptions: { id: SupportedLanguage; label: string }[] = [
     { id: 'pcm', label: 'Pidgin' },
+    { id: 'en', label: 'English' },
     { id: 'yo', label: 'Yoruba' },
   ];
+
+  // Handle first name change with gentle auto-suggestion for username if untouched
+  const handleFirstNameChange = (val: string) => {
+    setFirstName(val);
+    setError('');
+
+    if (!hasCustomUsername && val.trim().length > 0) {
+      const clean = val.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+      if (clean) {
+        setUsername(`${clean}${Math.floor(10 + Math.random() * 90)}`);
+      }
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const cleanName = name.trim();
-    if (!cleanName) {
-      setError('Please enter your name!');
+    const cleanFirst = firstName.trim();
+    const cleanLast = lastName.trim();
+
+    if (!cleanFirst) {
+      setError('Please enter your first name!');
       return;
     }
 
-    const parts = cleanName.split(' ');
-    const firstName = parts[0] || 'Champ';
-    const lastName = parts.slice(1).join(' ') || '';
+    const cleanFullName = cleanLast ? `${cleanFirst} ${cleanLast}` : cleanFirst;
+    const finalUsername =
+      username.trim() ||
+      `${cleanFirst.toLowerCase().replace(/[^a-z0-9]/g, '')}${Math.floor(10 + Math.random() * 90)}` ||
+      generateAnonymousNickname();
 
-    // Map age group to typical age
-    const ageMap: Record<string, { age: number; grp: AgeGroup }> = {
-      '8 - 10': { age: 9, grp: '6 - 9' },
-      '11 - 13': { age: 12, grp: '10 - 13' },
-      '14 - 16': { age: 15, grp: '14 - 17' },
+    const ageMap: Record<AgeGroup, number> = {
+      '6 - 9': 8,
+      '10 - 13': 11,
+      '14 - 17': 15,
     };
 
-    const mapped = ageMap[selectedAgeGroup] || { age: 12, grp: '10 - 13' };
+    const targetAge = ageMap[selectedAgeGroup] || 11;
 
     setIsSubmitting(true);
     try {
-      await createProfile({
-        name: cleanName,
-        firstName,
-        lastName,
-        username: cleanName,
-        age: mapped.age,
-        ageGroup: mapped.grp,
-        preferredLanguage: selectedLanguage,
-        avatarId: profile?.avatarId || 'avatar-eagle',
-      });
+      if (profile && profile.id) {
+        await updateProfile({
+          name: cleanFullName,
+          firstName: cleanFirst,
+          lastName: cleanLast,
+          username: finalUsername,
+          anonymousNickname: finalUsername,
+          age: targetAge,
+          ageGroup: selectedAgeGroup,
+          preferredLanguage: selectedLanguage,
+        });
+      } else {
+        await createProfile({
+          name: cleanFullName,
+          firstName: cleanFirst,
+          lastName: cleanLast,
+          username: finalUsername,
+          age: targetAge,
+          ageGroup: selectedAgeGroup,
+          preferredLanguage: selectedLanguage,
+          avatarId: profile?.avatarId || 'avatar-eagle',
+        });
+      }
 
       setLanguage(selectedLanguage);
       navigate('/child/dashboard');
     } catch (err) {
-      console.error('[AboutYourselfPage] Profile creation error:', err);
+      console.error('[AboutYourselfPage] Profile submission failed:', err);
+      // Ensure smooth navigation to dashboard even if network request fails
       navigate('/child/dashboard');
     } finally {
       setIsSubmitting(false);
@@ -77,98 +127,141 @@ export const AboutYourselfPage: React.FC = () => {
   };
 
   return (
-    <div className="flex-1 min-h-screen bg-[#faf8f5]/50 md:bg-white flex flex-col py-4 px-4 sm:px-8 pb-28 sm:pb-8 animate-in fade-in duration-300">
-      <div className="max-w-md w-full mx-auto flex flex-col text-left">
-
-        {/* ── Top Bar with Back Button and Label ── */}
-        <div className="flex items-center gap-2 pt-1 select-none">
+    <div className="flex-1 min-h-screen bg-[#FFFDFB] flex flex-col justify-start items-center py-6 px-5 sm:px-8 md:py-12 select-none font-sans animate-in fade-in duration-300">
+      <div className="w-full max-w-[440px] md:max-w-[480px] flex flex-col text-left">
+        
+        {/* ── Top Navigation Bar (Back Arrow) ── */}
+        <div className="flex items-center justify-between mb-4 sm:mb-6">
           <button
+            type="button"
             onClick={() => navigate(-1)}
-            className="w-10 h-10 rounded-full bg-white border border-slate-100 shadow-xs flex items-center justify-center text-slate-700 hover:bg-slate-50 transition-all cursor-pointer active:scale-95"
+            className="w-10 h-10 rounded-full bg-white/90 border border-[#f2e6dc] shadow-2xs flex items-center justify-center text-slate-700 hover:bg-slate-50 hover:text-slate-900 transition-all cursor-pointer active:scale-95"
             aria-label="Go back"
           >
             <ArrowLeft className="w-5 h-5 stroke-[2.2]" />
           </button>
-          <span className="text-base font-bold text-slate-800 ml-1">
-            Back
-          </span>
+
+          {/* Desktop Friendly Badge Indicator */}
+          <div className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-50 border border-amber-200/60 text-amber-900 text-xs font-bold">
+            <Sparkles className="w-3.5 h-3.5 text-[#A73605]" />
+            <span>Profile Setup</span>
+          </div>
         </div>
 
-        {/* ── Title & Subtitle ── */}
-        <div className="mt-6 mb-6">
-          <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
-            About yourself
+        {/* ── Heading matching uploaded design ── */}
+        <div className="mb-6 sm:mb-8">
+          <h1 className="text-[28px] sm:text-3xl md:text-[34px] font-black text-[#1C1917] tracking-tight leading-tight">
+            Tell us about yourself
           </h1>
-          <p className="text-xs sm:text-sm font-medium text-slate-400 mt-1">
+          <p className="text-sm sm:text-base font-normal text-[#8A8379] mt-1.5 leading-snug">
             we will personalise your daily challenges
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+        {/* ── Form Fields ── */}
+        <form onSubmit={handleSubmit} className="flex flex-col gap-5 sm:gap-6">
+          
+          {/* Row 1: First name & Last name side by side (2 columns) */}
+          <div className="grid grid-cols-2 gap-3 sm:gap-4">
+            {/* First name */}
+            <div>
+              <label className="block text-sm font-bold text-[#1C1917] mb-2">
+                First name
+              </label>
+              <input
+                type="text"
+                value={firstName}
+                onChange={(e) => handleFirstNameChange(e.target.value)}
+                placeholder="Placeholder name"
+                className="w-full h-12 sm:h-13 px-4 rounded-xl sm:rounded-2xl bg-[#FEF6D8] border border-[#F4DD9A] text-[#1C1917] font-medium text-sm sm:text-base placeholder:text-[#A3997A] focus:outline-none focus:border-[#A73605] focus:ring-2 focus:ring-[#A73605]/20 focus:bg-[#FFF9E4] transition-all"
+                autoComplete="given-name"
+              />
+            </div>
 
-          {/* ── Your Name Field ── */}
+            {/* Last name */}
+            <div>
+              <label className="block text-sm font-bold text-[#1C1917] mb-2">
+                Last name
+              </label>
+              <input
+                type="text"
+                value={lastName}
+                onChange={(e) => {
+                  setLastName(e.target.value);
+                  setError('');
+                }}
+                placeholder="Placeholder name"
+                className="w-full h-12 sm:h-13 px-4 rounded-xl sm:rounded-2xl bg-[#FEF6D8] border border-[#F4DD9A] text-[#1C1917] font-medium text-sm sm:text-base placeholder:text-[#A3997A] focus:outline-none focus:border-[#A73605] focus:ring-2 focus:ring-[#A73605]/20 focus:bg-[#FFF9E4] transition-all"
+                autoComplete="family-name"
+              />
+            </div>
+          </div>
+
+          {/* Row 2: Username (full width) */}
           <div>
-            <label className="block text-sm font-bold text-slate-800 mb-2">
-              Your Name
+            <label className="block text-sm font-bold text-[#1C1917] mb-2">
+              Username
             </label>
             <input
               type="text"
-              value={name}
+              value={username}
               onChange={(e) => {
-                setName(e.target.value);
+                setUsername(e.target.value);
+                setHasCustomUsername(true);
                 setError('');
               }}
-              placeholder="e.g. Tolu Olawale"
-              className="w-full p-3.5 px-4 rounded-xl bg-[#fef9c3] border border-amber-300/80 text-slate-900 font-semibold focus:outline-none focus:ring-2 focus:ring-[#a73605]/30 placeholder:text-slate-400 transition-all"
+              placeholder="Placeholder name"
+              className="w-full h-12 sm:h-13 px-4 rounded-xl sm:rounded-2xl bg-[#FEF6D8] border border-[#F4DD9A] text-[#1C1917] font-medium text-sm sm:text-base placeholder:text-[#A3997A] focus:outline-none focus:border-[#A73605] focus:ring-2 focus:ring-[#A73605]/20 focus:bg-[#FFF9E4] transition-all"
+              autoComplete="username"
             />
           </div>
 
-          {/* ── Your Age Group ── */}
+          {/* Row 3: Your Age group */}
           <div>
-            <label className="block text-sm font-bold text-slate-800 mb-2">
+            <label className="block text-sm font-bold text-[#1C1917] mb-2">
               Your Age group
             </label>
-            <div className="flex gap-2.5">
-              {ageGroups.map((grp) => {
-                const isSelected = selectedAgeGroup === grp;
+            <div className="grid grid-cols-3 gap-2.5 sm:gap-3">
+              {ageGroupOptions.map((opt) => {
+                const isSelected = selectedAgeGroup === opt.id;
                 return (
                   <button
-                    key={grp}
+                    key={opt.id}
                     type="button"
-                    onClick={() => setSelectedAgeGroup(grp)}
-                    className={`flex-1 py-3 px-2 rounded-xl text-xs sm:text-sm font-bold text-center transition-all cursor-pointer ${
+                    onClick={() => setSelectedAgeGroup(opt.id)}
+                    className={`h-12 sm:h-13 rounded-xl sm:rounded-2xl text-xs sm:text-sm font-semibold flex items-center justify-center transition-all cursor-pointer select-none ${
                       isSelected
-                        ? 'bg-[#fef9c3] border-2 border-[#a73605] text-slate-900 shadow-xs'
-                        : 'bg-[#fef9c3] border border-amber-300/80 text-slate-800 hover:border-amber-400'
+                        ? 'bg-[#FEF6D8] border-2 border-[#A73605] text-[#1C1917] font-bold shadow-xs scale-[1.01]'
+                        : 'bg-[#FEF6D8] border border-[#F4DD9A] text-[#1C1917] hover:border-amber-400 active:scale-95'
                     }`}
                   >
-                    {grp}
+                    {opt.label}
                   </button>
                 );
               })}
             </div>
           </div>
 
-          {/* ── Preferred Language ── */}
+          {/* Row 4: Preferred language */}
           <div>
-            <label className="block text-sm font-bold text-slate-800 mb-2">
+            <label className="block text-sm font-bold text-[#1C1917] mb-2">
               Preferred language
             </label>
-            <div className="flex gap-2.5">
-              {languages.map((lang) => {
-                const isSelected = selectedLanguage === lang.id;
+            <div className="grid grid-cols-3 gap-2.5 sm:gap-3">
+              {languageOptions.map((opt) => {
+                const isSelected = selectedLanguage === opt.id;
                 return (
                   <button
-                    key={lang.id}
+                    key={opt.id}
                     type="button"
-                    onClick={() => setSelectedLanguage(lang.id)}
-                    className={`flex-1 py-3 px-2 rounded-xl text-xs sm:text-sm font-bold text-center transition-all cursor-pointer ${
+                    onClick={() => setSelectedLanguage(opt.id)}
+                    className={`h-12 sm:h-13 rounded-xl sm:rounded-2xl text-xs sm:text-sm font-semibold flex items-center justify-center transition-all cursor-pointer select-none ${
                       isSelected
-                        ? 'bg-[#fef9c3] border-2 border-[#a73605] text-slate-900 shadow-xs'
-                        : 'bg-[#fef9c3] border border-amber-300/80 text-slate-800 hover:border-amber-400'
+                        ? 'bg-[#FEF6D8] border-2 border-[#A73605] text-[#1C1917] font-bold shadow-xs scale-[1.01]'
+                        : 'bg-[#FEF6D8] border border-[#F4DD9A] text-[#1C1917] hover:border-amber-400 active:scale-95'
                     }`}
                   >
-                    {lang.label}
+                    {opt.label}
                   </button>
                 );
               })}
@@ -177,25 +270,33 @@ export const AboutYourselfPage: React.FC = () => {
 
           {/* Error Message */}
           {error && (
-            <p className="text-xs font-bold text-rose-600 animate-shake">
+            <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-bold animate-shake">
               {error}
-            </p>
+            </div>
           )}
 
-          {/* ── Update Info CTA Button ── */}
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="w-full py-4 px-6 rounded-full bg-[#a73605] hover:bg-[#8e2e04] active:scale-[0.98] disabled:opacity-60 text-white font-bold text-base shadow-lg shadow-[#a73605]/25 mt-6 transition-all cursor-pointer text-center flex items-center justify-center gap-2"
-          >
-            {isSubmitting ? (
-              <span>Saving Profile...</span>
-            ) : (
-              <span>Update Info</span>
-            )}
-          </button>
+          {/* ── Let's Go! 🚀 CTA Button ── */}
+          <div className="pt-2 sm:pt-4">
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="w-full py-4 sm:py-4.5 px-6 rounded-full bg-[#A73605] hover:bg-[#8E2E04] active:scale-[0.98] disabled:opacity-60 text-white font-extrabold text-base sm:text-lg shadow-xl shadow-[#A73605]/30 transition-all cursor-pointer text-center flex items-center justify-center gap-2 select-none"
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  <span>Personalising your journey...</span>
+                </>
+              ) : (
+                <span>Let&apos;s Go! 🚀</span>
+              )}
+            </button>
+          </div>
 
         </form>
+
+        {/* Bottom spacer for comfortable scrolling on mobile screens */}
+        <div className="h-8 sm:h-12" />
 
       </div>
     </div>

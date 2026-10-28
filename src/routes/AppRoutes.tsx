@@ -76,6 +76,7 @@ export const AppRoutes: React.FC = () => {
         <Route path="dashboard" element={<HomeDashboardPage />} />
         <Route path="welcome" element={<WelcomeScreen />} />
         <Route path="about-yourself" element={<AboutYourselfPage />} />
+        <Route path="aboutyourself" element={<AboutYourselfPage />} />
         <Route path="onboarding" element={<AboutYourselfPage />} />
         <Route path="challenge" element={<DailyChallengePage />} />
         <Route path="feedback" element={<FeedbackPage />} />

@@ -5,6 +5,21 @@ import { Home, Puzzle, TrendingUp, BarChart3 } from 'lucide-react';
 export const BottomNav: React.FC = () => {
   const location = useLocation();
 
+  // Explicitly hide bottom navigation on aboutyourself and onboarding screens
+  const isAboutYourself =
+    location.pathname.includes('aboutyourself') ||
+    location.pathname.includes('about-yourself');
+
+  const isHiddenOnRoute =
+    isAboutYourself ||
+    location.pathname === '/child/welcome' ||
+    location.pathname === '/child/onboarding' ||
+    location.pathname === '/onboarding';
+
+  if (isHiddenOnRoute) {
+    return null;
+  }
+
   const isHomeActive =
     location.pathname === '/child' ||
     location.pathname === '/child/dashboard' ||

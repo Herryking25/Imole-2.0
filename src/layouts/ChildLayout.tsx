@@ -10,11 +10,19 @@ export const ChildLayout: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const prevPathRef = useRef(location.pathname);
 
+  const isAboutYourself =
+    location.pathname.includes('aboutyourself') ||
+    location.pathname.includes('about-yourself');
+
+  const isOnboardingPage =
+    location.pathname === '/child/welcome' ||
+    isAboutYourself ||
+    location.pathname === '/child/onboarding';
+
   const isDashboardOrOnboarding =
     location.pathname === '/child' ||
     location.pathname === '/child/dashboard' ||
-    location.pathname === '/child/welcome' ||
-    location.pathname === '/child/about-yourself' ||
+    isOnboardingPage ||
     location.pathname === '/child/settings';
 
   // Determine contextual loading message based on destination
@@ -64,8 +72,8 @@ export const ChildLayout: React.FC = () => {
         <div className="fixed top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-amber-400 via-[#ea580c] to-[#a73605] z-50 animate-pulse" />
       )}
 
-      {/* Desktop Left Sidebar */}
-      <ChildSidebar className="hidden md:flex" />
+      {/* Desktop Left Sidebar (hidden on onboarding screens for focused experience) */}
+      {!isOnboardingPage && <ChildSidebar className="hidden md:flex" />}
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0 bg-[#faf8f5]/60 md:bg-white min-h-screen">
@@ -84,7 +92,7 @@ export const ChildLayout: React.FC = () => {
           )}
         </main>
 
-        {location.pathname !== '/child/welcome' && <BottomNav />}
+        {!isOnboardingPage && <BottomNav />}
       </div>
     </div>
   );
