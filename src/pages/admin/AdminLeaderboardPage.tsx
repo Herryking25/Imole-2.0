@@ -1,6 +1,6 @@
 import React from 'react';
 import { MOCK_LEADERBOARD } from '../../data/mockLeaderboard';
-import { Trophy, Award, Flame, Star, ArrowUpRight } from 'lucide-react';
+import { Flame, ArrowUpRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export const AdminLeaderboardPage: React.FC = () => {

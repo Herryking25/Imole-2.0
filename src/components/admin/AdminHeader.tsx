@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { ArrowLeft, Bell, CheckCircle2, Clock, Sparkles } from 'lucide-react';
 
 interface AdminHeaderProps {

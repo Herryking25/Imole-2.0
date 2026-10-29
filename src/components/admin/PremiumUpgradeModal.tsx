@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, Check, Star, Sparkles, Lock, ArrowRight, BarChart3, Lightbulb, Gift, LifeBuoy } from 'lucide-react';
+import { X, Lock, ArrowRight, BarChart3, Lightbulb, Gift, LifeBuoy } from 'lucide-react';
 
 interface PremiumUpgradeModalProps {
   isOpen: boolean;

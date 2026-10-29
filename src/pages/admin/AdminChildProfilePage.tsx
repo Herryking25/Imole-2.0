@@ -5,11 +5,6 @@ import {
   Clock,
   FileText,
   Star,
-  Info,
-  Award,
-  Bell,
-  CheckCircle2,
-  Trophy,
 } from 'lucide-react';
 
 export const AdminChildProfilePage: React.FC = () => {

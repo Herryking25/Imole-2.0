@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ExternalLink, User, ShieldCheck, Mail, Phone, Calendar, Clock } from 'lucide-react';
+import { ExternalLink } from 'lucide-react';
 
 export const AdminParentProfilePage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'info' | 'activity' | 'challenges' | 'children'>('info');

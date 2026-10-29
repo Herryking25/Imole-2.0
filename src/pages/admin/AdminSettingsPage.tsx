@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { BookOpen, Languages, Download, BarChart3, Settings, ShieldCheck } from 'lucide-react';
+import { BookOpen, Languages, Download, BarChart3 } from 'lucide-react';
 import { ChallengeLibraryPage } from './ChallengeLibraryPage';
 import { LanguageManagementPage } from './LanguageManagementPage';
 import { AnalyticsExportPage } from './AnalyticsExportPage';

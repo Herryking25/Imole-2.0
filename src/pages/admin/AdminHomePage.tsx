@@ -1,16 +1,9 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  Users,
-  Award,
-  TrendingUp,
   Search,
   ExternalLink,
-  Star,
-  Zap,
   ArrowRight,
-  ShieldCheck,
-  CheckCircle2,
 } from 'lucide-react';
 import { PremiumUpgradeModal } from '../../components/admin/PremiumUpgradeModal';
 
