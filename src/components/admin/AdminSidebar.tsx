@@ -11,7 +11,7 @@ export const AdminSidebar: React.FC = () => {
       end: true,
     },
     {
-      to: '/admin/children/CHD-00123',
+      to: '/admin/progress',
       label: 'Progress',
       icon: <TrendingUp className="w-4.5 h-4.5 stroke-[1.8]" />,
     },

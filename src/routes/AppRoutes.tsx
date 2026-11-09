@@ -48,7 +48,9 @@ import { ParentFocusRecommendedPage } from '../pages/parent/ParentFocusRecommend
 import { AdminHomePage } from '../pages/admin/AdminHomePage';
 import { AdminLoginPage } from '../pages/admin/AdminLoginPage';
 import { AdminChildProfilePage } from '../pages/admin/AdminChildProfilePage';
+import { AdminChildDispatcher } from '../pages/admin/AdminChildDispatcher';
 import { AdminParentProfilePage } from '../pages/admin/AdminParentProfilePage';
+import { AdminProgressPage } from '../pages/admin/AdminProgressPage';
 import { AdminLeaderboardPage } from '../pages/admin/AdminLeaderboardPage';
 import { AdminSettingsPage } from '../pages/admin/AdminSettingsPage';
 import { PlatformMetricsPage } from '../pages/admin/PlatformMetricsPage';
@@ -122,8 +124,10 @@ export const AppRoutes: React.FC = () => {
       {/* Admin Flow */}
       <Route path="/admin" element={<AdminLayout />}>
         <Route index element={<AdminHomePage />} />
-        <Route path="children/:childId" element={<AdminChildProfilePage />} />
+        <Route path="children/:childId" element={<AdminChildDispatcher />} />
+        <Route path="children" element={<AdminChildProfilePage />} />
         <Route path="parents/:parentId" element={<AdminParentProfilePage />} />
+        <Route path="progress" element={<AdminProgressPage />} />
         <Route path="leaderboard" element={<AdminLeaderboardPage />} />
         <Route path="settings" element={<AdminSettingsPage />} />
         <Route path="metrics" element={<PlatformMetricsPage />} />
