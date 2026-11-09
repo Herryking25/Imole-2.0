@@ -149,3 +149,23 @@ export interface GetLeaderboardResponse {
   me?: LeaderboardRankItem;
   message?: string;
 }
+
+// ── Skills ────────────────────────────────────────────────────────────────
+
+export interface BackendSkill {
+  _id: string;
+  slug: string;
+  name: string;
+}
+
+export interface GetSkillsResponse {
+  success: boolean;
+  skills: BackendSkill[];
+  message?: string;
+}
+
+export interface GetSkillResponse {
+  success: boolean;
+  skill: BackendSkill;
+  message?: string;
+}

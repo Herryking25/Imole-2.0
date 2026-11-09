@@ -8,6 +8,7 @@ import type {
   GetChildProgressResponse,
   GetChildShareCardResponse,
   GetChildCertificatesResponse,
+  GetChildChallengeHistoryResponse,
 } from '../../types/parentApi';
 
 const TOKEN_KEY = 'imole_v1_parent_token';
@@ -163,5 +164,22 @@ export class ParentApiClient {
     return this.request<GetChildCertificatesResponse>(`/parents/children/${childId}/certificates`, {
       method: 'GET',
     });
+  }
+
+  static async getChildChallengeHistory(childId: string): Promise<GetChildChallengeHistoryResponse> {
+    return this.request<GetChildChallengeHistoryResponse>(`/parents/children/${childId}/challenges`, {
+      method: 'GET',
+    });
+  }
+
+  /** Clear all parent-related storage for a full reset */
+  static resetAll(): void {
+    this.clearToken();
+    try {
+      localStorage.removeItem('imole_v1_parent_user');
+      localStorage.removeItem('imole_v1_parent_children');
+      localStorage.removeItem('imole_v1_parent_selected_child');
+      sessionStorage.removeItem('imole_parent_unlocked');
+    } catch { /* ignore */ }
   }
 }

@@ -7,6 +7,39 @@ import type { SkillId } from '../types/skills';
 import { getDayOfYear, getTodayDateString } from '../utils/dateUtils';
 import type { ChallengeSubmission } from '../types/submission';
 
+/**
+ * Resolve a backend skillId (MongoDB ObjectId) to an internal SkillId.
+ * Uses the skills cache written by SkillsService. Falls back to
+ * 'creative-problem-solving' so the keyword fallback in mapBackendChallenge
+ * can still refine it.
+ */
+function resolveSkillId(backendSkillId: string): SkillId {
+  try {
+    const raw = localStorage.getItem('imole_v1_skills_cache');
+    if (raw) {
+      const cache = JSON.parse(raw) as {
+        skills: Array<{ _id: string; slug: string }>;
+      };
+      const found = cache.skills.find(
+        (s) => s._id === backendSkillId || s.slug === backendSkillId
+      );
+      if (found) {
+        const slugMap: Record<string, SkillId> = {
+          mental_math: 'mental-math-logic',
+          persuasive_speaking: 'persuasive-speaking',
+          financial_literacy: 'financial-literacy',
+          creative_problem_solving: 'creative-problem-solving',
+          emotional_intelligence: 'emotional-intelligence',
+        };
+        return slugMap[found.slug] ?? 'creative-problem-solving';
+      }
+    }
+  } catch {
+    /* ignore storage errors */
+  }
+  return 'creative-problem-solving';
+}
+
 export interface TodayAssignmentState {
   assignmentId: string;
   locked: boolean;
@@ -19,83 +52,61 @@ export interface TodayAssignmentState {
 
 export class ChallengeService {
   static mapBackendChallenge(bc: BackendChallenge): Challenge {
-    const isMcq = bc.type === 'multiple_choice' && Array.isArray(bc.options) && bc.options.length > 0;
+    const isMcq =
+      bc.type === 'multiple_choice' &&
+      Array.isArray(bc.options) &&
+      bc.options.length > 0;
 
-    const promptLower = (bc.prompt || '').toLowerCase();
-    let skillId: SkillId = 'creative-problem-solving';
-    if (
-      promptLower.includes('naira') ||
-      promptLower.includes('money') ||
-      promptLower.includes('buy') ||
-      promptLower.includes('save') ||
-      promptLower.includes('budget') ||
-      promptLower.includes('cost')
-    ) {
-      skillId = 'financial-literacy';
-    } else if (
-      promptLower.includes('math') ||
-      promptLower.includes('number') ||
-      promptLower.includes('multiply') ||
-      promptLower.includes('add') ||
-      promptLower.includes('change') ||
-      promptLower.includes('calculate')
-    ) {
-      skillId = 'mental-math-logic';
-    } else if (
-      promptLower.includes('speak') ||
-      promptLower.includes('convince') ||
-      promptLower.includes('debate') ||
-      promptLower.includes('present') ||
-      promptLower.includes('argue')
-    ) {
-      skillId = 'persuasive-speaking';
-    } else if (
-      promptLower.includes('feel') ||
-      promptLower.includes('friend') ||
-      promptLower.includes('angry') ||
-      promptLower.includes('sorry') ||
-      promptLower.includes('tease')
-    ) {
-      skillId = 'emotional-intelligence';
+    // Resolve skillId: skills cache first, then keyword heuristic
+    let skillId: SkillId = resolveSkillId(bc.skillId);
+
+    if (skillId === 'creative-problem-solving') {
+      const p = (bc.prompt || '').toLowerCase();
+      if (p.includes('naira') || p.includes('money') || p.includes('buy') ||
+          p.includes('save') || p.includes('budget') || p.includes('cost')) {
+        skillId = 'financial-literacy';
+      } else if (p.includes('math') || p.includes('number') || p.includes('multiply') ||
+                 p.includes('add') || p.includes('change') || p.includes('calculate')) {
+        skillId = 'mental-math-logic';
+      } else if (p.includes('speak') || p.includes('convince') || p.includes('debate') ||
+                 p.includes('present') || p.includes('argue')) {
+        skillId = 'persuasive-speaking';
+      } else if (p.includes('feel') || p.includes('friend') || p.includes('angry') ||
+                 p.includes('sorry') || p.includes('tease')) {
+        skillId = 'emotional-intelligence';
+      }
     }
 
     const options: QuestionOption[] | undefined = isMcq
-      ? bc.options.map((optStr, idx) => ({
+      ? bc.options.map((optStr) => ({
           id: optStr,
           text: { en: optStr, pcm: optStr, yo: optStr },
-          isCorrect: idx === 0,
+          isCorrect: false, // grading is done server-side
         }))
       : undefined;
+
+    const shortTitle =
+      bc.prompt.slice(0, 60) + (bc.prompt.length > 60 ? '\u2026' : '');
 
     return {
       id: bc.id,
       dayNumber: 1,
       skillId,
-      difficulty: bc.difficulty === 'hard' ? 'sss' : bc.difficulty === 'medium' ? 'jss' : 'primary',
+      difficulty:
+        bc.difficulty === 'hard' ? 'sss' :
+        bc.difficulty === 'medium' ? 'jss' : 'primary',
       type: isMcq ? 'mcq' : 'text',
-      title: {
-        en: bc.prompt.slice(0, 48) + (bc.prompt.length > 48 ? '...' : ''),
-        pcm: bc.prompt.slice(0, 48) + (bc.prompt.length > 48 ? '...' : ''),
-        yo: bc.prompt.slice(0, 48) + (bc.prompt.length > 48 ? '...' : ''),
-      },
-      scenario: {
-        en: bc.prompt,
-        pcm: bc.prompt,
-        yo: bc.prompt,
-      },
-      question: {
-        en: bc.prompt,
-        pcm: bc.prompt,
-        yo: bc.prompt,
-      },
+      title: { en: shortTitle, pcm: shortTitle, yo: shortTitle },
+      scenario: { en: bc.prompt, pcm: bc.prompt, yo: bc.prompt },
+      question: { en: bc.prompt, pcm: bc.prompt, yo: bc.prompt },
       options,
       educationalTip: {
-        en: 'Consistent daily problem-solving builds lifelong confidence and sharp thinking.',
+        en: "Consistent daily practice builds lifelong confidence and sharp thinking.",
         pcm: 'As you dey practice everyday, your brain go dey sharp well well.',
         yo: 'Ise sise lojoojumo lo n mu ogbon ati oye po si.',
       },
       encouragement: {
-        en: 'Fantastic job completing today’s challenge!',
+        en: "Fantastic job completing today's challenge!",
         pcm: 'You do well as you finish today challenge!',
         yo: 'Ise takuntakun lo se!',
       },
@@ -127,7 +138,8 @@ export class ChallengeService {
           const state: TodayAssignmentState = {
             assignmentId: res.assignmentId,
             locked: Boolean(res.locked || res.completedAt),
-            swapsRemaining: typeof res.swapsRemaining === 'number' ? res.swapsRemaining : 2,
+            swapsRemaining:
+              typeof res.swapsRemaining === 'number' ? res.swapsRemaining : 2,
             completedAt: res.completedAt || null,
             challenge: mappedChallenge,
             rawBackendChallenge: res.challenge,
@@ -137,7 +149,10 @@ export class ChallengeService {
           return state;
         }
       } catch (err) {
-        console.warn('[ChallengeService] Failed to fetch remote today challenge:', err);
+        console.warn(
+          '[ChallengeService] Failed to fetch remote today challenge:',
+          err
+        );
       }
     }
 
@@ -172,7 +187,8 @@ export class ChallengeService {
         const state: TodayAssignmentState = {
           assignmentId: res.assignmentId,
           locked: Boolean(res.locked || res.completedAt),
-          swapsRemaining: typeof res.swapsRemaining === 'number' ? res.swapsRemaining : 1,
+          swapsRemaining:
+            typeof res.swapsRemaining === 'number' ? res.swapsRemaining : 1,
           completedAt: res.completedAt || null,
           challenge: mappedChallenge,
           rawBackendChallenge: res.challenge,
@@ -205,7 +221,10 @@ export class ChallengeService {
 
   static isLocalSubmissionCompletedToday(): boolean {
     const today = getTodayDateString();
-    const submissions = StorageService.get<ChallengeSubmission[]>(StorageKeys.SUBMISSIONS, []);
+    const submissions = StorageService.get<ChallengeSubmission[]>(
+      StorageKeys.SUBMISSIONS,
+      []
+    );
     return submissions.some((s) => s.date === today);
   }
 
@@ -218,7 +237,10 @@ export class ChallengeService {
   }
 
   static getAllChallenges(): Challenge[] {
-    const custom = StorageService.get<Challenge[]>(StorageKeys.CUSTOM_CHALLENGES, []);
+    const custom = StorageService.get<Challenge[]>(
+      StorageKeys.CUSTOM_CHALLENGES,
+      []
+    );
     return [...CURATED_CHALLENGES, ...custom];
   }
 
@@ -231,7 +253,10 @@ export class ChallengeService {
   }
 
   static saveCustomChallenge(challenge: Challenge): Challenge {
-    const custom = StorageService.get<Challenge[]>(StorageKeys.CUSTOM_CHALLENGES, []);
+    const custom = StorageService.get<Challenge[]>(
+      StorageKeys.CUSTOM_CHALLENGES,
+      []
+    );
     const existingIndex = custom.findIndex((c) => c.id === challenge.id);
 
     let updated: Challenge[];

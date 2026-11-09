@@ -19,6 +19,8 @@ import { AboutYourselfPage } from '../pages/child/AboutYourselfPage';
 import { OnboardingPage } from '../pages/child/OnboardingPage';
 import { DailyChallengePage } from '../pages/child/DailyChallengePage';
 import { FeedbackPage } from '../pages/child/FeedbackPage';
+import { ChallengePage } from '../pages/child/ChallengePage';
+import { ChallengeResultPage } from '../pages/child/ChallengeResultPage';
 import { ProgressDashboardPage } from '../pages/child/ProgressDashboardPage';
 import { LeaderboardPage } from '../pages/child/LeaderboardPage';
 import { ChildSettingsPage } from '../pages/child/ChildSettingsPage';
@@ -36,8 +38,19 @@ import { ParentUnlockPage } from '../pages/parent/ParentUnlockPage';
 import { ParentForgotPinPage } from '../pages/parent/ParentForgotPinPage';
 import { ParentAuthPage } from '../pages/parent/ParentAuthPage';
 import { ParentLoginPage } from '../pages/parent/ParentLoginPage';
+import { ParentPremiumPage } from '../pages/parent/ParentPremiumPage';
+import { ParentPaymentPage } from '../pages/parent/ParentPaymentPage';
+import { ParentPremiumSuccessPage } from '../pages/parent/ParentPremiumSuccessPage';
+import { ParentFocusSuccessPage } from '../pages/parent/ParentFocusSuccessPage';
+import { ParentFocusRecommendedPage } from '../pages/parent/ParentFocusRecommendedPage';
 
 // Admin Pages
+import { AdminHomePage } from '../pages/admin/AdminHomePage';
+import { AdminLoginPage } from '../pages/admin/AdminLoginPage';
+import { AdminChildProfilePage } from '../pages/admin/AdminChildProfilePage';
+import { AdminParentProfilePage } from '../pages/admin/AdminParentProfilePage';
+import { AdminLeaderboardPage } from '../pages/admin/AdminLeaderboardPage';
+import { AdminSettingsPage } from '../pages/admin/AdminSettingsPage';
 import { PlatformMetricsPage } from '../pages/admin/PlatformMetricsPage';
 import { ChallengeLibraryPage } from '../pages/admin/ChallengeLibraryPage';
 import { LanguageManagementPage } from '../pages/admin/LanguageManagementPage';
@@ -62,6 +75,13 @@ export const AppRoutes: React.FC = () => {
       <Route path="/parent/reset-password" element={<ParentForgotPinPage />} />
       <Route path="/parent/setup" element={<Navigate to="/parent/language" replace />} />
       <Route path="/parent/onboarding" element={<Navigate to="/parent/language" replace />} />
+      {/* Premium flow — standalone (no layout auth gate needed) */}
+      <Route path="/parent/premium" element={<ParentPremiumPage />} />
+      <Route path="/parent/premium/payment" element={<ParentPaymentPage />} />
+      <Route path="/parent/premium/success" element={<ParentPremiumSuccessPage />} />
+      {/* Focus Area flow */}
+      <Route path="/parent/focus/success" element={<ParentFocusSuccessPage />} />
+      <Route path="/parent/focus/recommended" element={<ParentFocusRecommendedPage />} />
 
       {/* Public Flow */}
       <Route element={<PublicLayout />}>
@@ -79,6 +99,8 @@ export const AppRoutes: React.FC = () => {
         <Route path="aboutyourself" element={<AboutYourselfPage />} />
         <Route path="onboarding" element={<AboutYourselfPage />} />
         <Route path="challenge" element={<DailyChallengePage />} />
+        <Route path="challenge/play/:challengeId" element={<ChallengePage />} />
+        <Route path="challenge/result/:challengeId" element={<ChallengeResultPage />} />
         <Route path="feedback" element={<FeedbackPage />} />
         <Route path="progress" element={<ProgressDashboardPage />} />
         <Route path="leaderboard" element={<LeaderboardPage />} />
@@ -94,9 +116,17 @@ export const AppRoutes: React.FC = () => {
         <Route path="certificates" element={<CertificatesPage />} />
       </Route>
 
+      {/* Standalone Admin Login */}
+      <Route path="/admin/login" element={<AdminLoginPage />} />
+
       {/* Admin Flow */}
       <Route path="/admin" element={<AdminLayout />}>
-        <Route index element={<PlatformMetricsPage />} />
+        <Route index element={<AdminHomePage />} />
+        <Route path="children/:childId" element={<AdminChildProfilePage />} />
+        <Route path="parents/:parentId" element={<AdminParentProfilePage />} />
+        <Route path="leaderboard" element={<AdminLeaderboardPage />} />
+        <Route path="settings" element={<AdminSettingsPage />} />
+        <Route path="metrics" element={<PlatformMetricsPage />} />
         <Route path="challenges" element={<ChallengeLibraryPage />} />
         <Route path="languages" element={<LanguageManagementPage />} />
         <Route path="analytics" element={<AnalyticsExportPage />} />

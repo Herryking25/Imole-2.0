@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, ArrowRight, Users } from 'lucide-react';
+import { ArrowLeft, Users } from 'lucide-react';
 import { useLanguage } from '../../hooks/useLanguage';
 import type { SupportedLanguage } from '../../types/i18n';
 
@@ -26,73 +26,69 @@ export const ParentLanguagePage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#faf7f2] flex flex-col justify-between py-6 px-4 sm:px-6 select-none font-sans">
-      <div className="max-w-md w-full mx-auto flex flex-col justify-between min-h-[88vh]">
+    <div className="min-h-screen bg-[#FFF8F6] flex flex-col font-sans select-none">
+      <div className="flex-1 flex flex-col max-w-sm w-full mx-auto px-5 py-6">
 
-        {/* ── Top Bar ── */}
-        <div>
-          <div className="flex items-center justify-between pt-1">
-            <button
-              onClick={() => navigate('/child/settings')}
-              className="w-11 h-11 rounded-full bg-white border border-slate-200/80 shadow-xs flex items-center justify-center text-slate-700 hover:bg-slate-50 active:scale-95 transition-all cursor-pointer"
-              aria-label="Go back to child flow"
-            >
-              <ArrowLeft className="w-5 h-5 stroke-[2.2]" />
-            </button>
+        {/* Top Bar */}
+        <div className="flex items-center justify-between mb-8">
+          <button
+            type="button"
+            onClick={() => navigate('/parent/auth')}
+            className="w-10 h-10 rounded-full bg-white border border-slate-200 shadow-sm flex items-center justify-center text-slate-700 hover:bg-slate-50 active:scale-95 transition-all cursor-pointer"
+            aria-label="Go back"
+          >
+            <ArrowLeft className="w-5 h-5 stroke-[2.2]" />
+          </button>
 
-            {/* Step Pill */}
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#fff4ed] border border-[#fbcbb7] text-[#b83808] text-xs font-bold shadow-2xs">
-              <span className="w-2 h-2 rounded-full bg-[#b83808]" />
-              <span>Step 1 of 2 · Parent Profile</span>
-            </div>
-
-            {/* Placeholder to balance the flex layout */}
-            <div className="w-11" />
+          {/* Step Pill */}
+          <div className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-[#FFF1ED] border border-[#FBCBB7] text-[#B83806] text-xs font-bold">
+            <span className="w-2 h-2 rounded-full bg-[#B83806]" />
+            <span>Step 1 of 2</span>
           </div>
 
-          {/* ── Center Header Icon ── */}
-          <div className="flex flex-col items-center text-center mt-8">
-            <div className="w-16 h-16 rounded-[22px] bg-gradient-to-b from-[#fde6d8] via-[#ffdcd0] to-[#fbcbb7] flex items-center justify-center shadow-xs mb-4">
-              <Users className="w-8 h-8 text-[#8a2908] stroke-[2.2]" />
-            </div>
-
-            {/* Title */}
-            <h1 className="text-2xl sm:text-[26px] font-extrabold text-[#292524] tracking-tight">
-              Select preferred language
-            </h1>
-          </div>
-
-          {/* ── Language Option Buttons ── */}
-          <div className="flex flex-col gap-3.5 mt-8">
-            {LANGUAGE_OPTIONS.map((item) => {
-              const isSelected = selectedLanguage === item.id;
-              return (
-                <button
-                  key={item.id}
-                  type="button"
-                  onClick={() => setSelectedLanguage(item.id)}
-                  className={`w-full py-4 px-6 rounded-2xl font-bold text-base sm:text-lg transition-all cursor-pointer text-center select-none ${
-                    isSelected
-                      ? 'bg-[#fef0c7] border-2 border-[#a73605] text-[#292524] shadow-xs scale-[1.01]'
-                      : 'bg-[#fef3c7]/80 hover:bg-[#fef0c7] border border-[#fde68a] text-slate-800 hover:border-amber-400 active:scale-[0.99]'
-                  }`}
-                >
-                  {item.label}
-                </button>
-              );
-            })}
-          </div>
+          <div className="w-10" />
         </div>
 
-        {/* ── Bottom Action ── */}
-        <div className="pt-6 pb-2">
+        {/* Header */}
+        <div className="flex flex-col items-center text-center mb-10">
+          <div className="w-16 h-16 rounded-[20px] bg-[#FFF1ED] flex items-center justify-center mb-5">
+            <Users className="w-8 h-8 text-[#B83806] stroke-[1.8]" />
+          </div>
+
+          <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">
+            Select preferred language
+          </h1>
+        </div>
+
+        {/* Language options */}
+        <div className="flex flex-col gap-4 flex-1">
+          {LANGUAGE_OPTIONS.map((item) => {
+            const isSelected = selectedLanguage === item.id;
+            return (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => setSelectedLanguage(item.id)}
+                className={`w-full py-4 px-6 rounded-2xl font-semibold text-base transition-all cursor-pointer text-center ${
+                  isSelected
+                    ? 'bg-[#FEF0C7] border-2 border-[#B83806] text-slate-900'
+                    : 'bg-[#FEF3C7] border border-[#FDE68A] text-slate-800 hover:bg-[#FEF0C7] active:scale-[0.99]'
+                }`}
+              >
+                {item.label}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Continue button — fixed at bottom */}
+        <div className="pt-8 pb-2">
           <button
             type="button"
             onClick={handleContinue}
-            className="w-full py-4 px-6 rounded-2xl bg-[#a73605] hover:bg-[#8e2e04] active:scale-[0.99] text-white font-extrabold text-base shadow-lg shadow-[#a73605]/25 flex items-center justify-center gap-2 transition-all cursor-pointer"
+            className="w-full py-4 rounded-2xl bg-[#B83806] hover:bg-[#9A2F05] active:scale-[0.99] text-white font-extrabold text-base shadow-lg shadow-[#B83806]/20 flex items-center justify-center transition-all cursor-pointer"
           >
-            <span>Continue</span>
-            <ArrowRight className="w-5 h-5 stroke-[2.5]" />
+            Continue
           </button>
         </div>
 

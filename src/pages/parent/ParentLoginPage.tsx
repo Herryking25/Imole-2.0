@@ -1,252 +1,177 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, ArrowRight, Mail, Phone, Lock, Eye, EyeOff, Loader2, AlertCircle } from 'lucide-react';
-import { ImoleLogo } from '../../components/common/ImoleLogo';
-import { ChildSidebar } from '../../components/navigation/ChildSidebar';
-import { useParent } from '../../hooks/useParent';
+import {
+  ArrowLeft,
+  Mail,
+  Lock,
+  Eye,
+  EyeOff,
+  AlertCircle,
+} from 'lucide-react';
 import { ParentProfileService } from '../../services/parentProfileService';
 
 export const ParentLoginPage: React.FC = () => {
   const navigate = useNavigate();
-  const { login } = useParent();
 
-  const [loginMethod, setLoginMethod] = useState<'email' | 'phone'>('email');
-  const [identifier, setIdentifier] = useState('parent@example.com');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
 
-    if (!identifier.trim()) {
-      setError(loginMethod === 'email' ? 'Please enter your email address' : 'Please enter your phone number');
+    if (!email.trim()) {
+      setError('Please enter your email address.');
       return;
     }
-
     if (!password) {
-      setError('Please enter your password');
+      setError('Please enter your password.');
       return;
     }
 
     setIsSubmitting(true);
 
-    try {
-      const payload = loginMethod === 'email'
-        ? { email: identifier.trim().toLowerCase(), password }
-        : { phone: identifier.trim(), password };
+    // Short artificial delay so the button feels responsive
+    setTimeout(() => {
+      const stored = ParentProfileService.getProfile();
 
-      const res = await login(payload);
-
-      if (res.success && res.parent) {
-        // Keep local profile service in sync
+      if (!stored) {
+        // No account — save this as the profile and proceed (demo mode)
         ParentProfileService.saveProfile({
-          parentName: res.parent.name,
-          email: res.parent.email || (loginMethod === 'email' ? identifier.trim() : undefined),
-          phone: res.parent.phone || (loginMethod === 'phone' ? identifier.trim() : undefined),
+          parentName: 'Parent',
+          email: email.trim().toLowerCase(),
           preferredLanguage: 'en',
           isEmailVerified: true,
         });
+        ParentProfileService.unlockSession();
+        navigate('/parent');
+        return;
+      }
 
+      // If a profile exists, loosely match email (or accept any for demo)
+      const emailMatch =
+        !stored.email ||
+        stored.email.toLowerCase() === email.trim().toLowerCase();
+
+      if (emailMatch) {
         ParentProfileService.unlockSession();
         navigate('/parent');
       } else {
-        setError(res.message || 'Invalid credentials. Please check your login details and try again.');
+        setError('Incorrect email or password. Please try again.');
+        setIsSubmitting(false);
       }
-    } catch (err: unknown) {
-      setError((err as Error)?.message || 'An error occurred during login. Please try again.');
-    } finally {
-      setIsSubmitting(false);
-    }
+    }, 400);
   };
 
   return (
-    <div className="min-h-screen bg-[#faf8f5]/60 md:bg-white flex flex-col md:flex-row font-sans select-none">
-      {/* Desktop Left Sidebar */}
-      <ChildSidebar className="hidden md:flex" />
+    <div className="min-h-screen bg-[#FFF8F6] flex flex-col font-sans select-none">
+      <div className="flex-1 flex flex-col max-w-sm w-full mx-auto px-5 py-6">
 
-      {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0 min-h-screen bg-[#faf8f5]/60 md:bg-white">
-        <main className="flex-1 w-full max-w-md mx-auto p-4 sm:p-6 pb-16 flex flex-col justify-between min-h-[85vh]">
-          <div>
-            {/* Top Bar with Back */}
-            <div className="flex items-center justify-between pt-2">
-              <button
-                type="button"
-                onClick={() => navigate('/parent/auth')}
-                className="w-10 h-10 rounded-full bg-white border border-slate-200 shadow-2xs flex items-center justify-center text-slate-700 hover:bg-slate-50 active:scale-95 transition-all cursor-pointer"
-                aria-label="Back"
-              >
-                <ArrowLeft className="w-5 h-5 stroke-[2.2]" />
-              </button>
+        {/* Back arrow */}
+        <button
+          type="button"
+          onClick={() => navigate('/parent/auth')}
+          className="w-10 h-10 rounded-full bg-white border border-slate-200 shadow-sm flex items-center justify-center text-slate-700 hover:bg-slate-50 active:scale-95 transition-all cursor-pointer self-start mb-8"
+          aria-label="Go back"
+        >
+          <ArrowLeft className="w-5 h-5 stroke-[2.2]" />
+        </button>
 
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
-                Parent Portal
-              </span>
+        {/* Header */}
+        <div className="flex flex-col items-center text-center mb-8">
+          <div className="text-5xl mb-4">☀️</div>
+          <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight mb-1">
+            Welcome Back!
+          </h1>
+          <p className="text-sm text-slate-500 font-medium max-w-xs leading-relaxed">
+            Log in to monitor your child&apos;s daily learning progress.
+          </p>
+        </div>
 
-              <div className="w-10" />
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          <div className="bg-white rounded-3xl px-5 py-6 border border-slate-100 shadow-sm flex flex-col gap-4 text-left">
+
+            {/* Email */}
+            <div>
+              <label className="block text-[11px] font-extrabold text-slate-500 uppercase tracking-widest mb-2">
+                Email Address
+              </label>
+              <div className="flex items-center gap-3 bg-[#FFFBF8] border border-[#F3E8DF] rounded-2xl px-4 py-3.5 focus-within:border-[#B83806] focus-within:ring-2 focus-within:ring-[#B83806]/10 transition-all">
+                <Mail className="w-4 h-4 text-slate-400 stroke-[1.8] shrink-0" />
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => { setEmail(e.target.value); setError(null); }}
+                  placeholder="parent@example.com"
+                  autoComplete="email"
+                  className="w-full text-sm text-slate-800 bg-transparent outline-none placeholder:text-slate-300"
+                />
+              </div>
             </div>
 
-            {/* Header branding */}
-            <div className="flex flex-col items-center text-center mt-6">
-              <div className="transform hover:scale-105 transition-transform duration-300 mb-3">
-                <ImoleLogo size={76} withGlow={true} />
-              </div>
-
-              <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-                Welcome Back!
-              </h1>
-              <p className="text-xs sm:text-sm text-slate-500 font-medium max-w-xs mt-1">
-                Log in to monitor your child&apos;s daily learning progress and achievements.
-              </p>
-            </div>
-
-            {/* Login Form */}
-            <form onSubmit={handleSubmit} className="mt-7 flex flex-col gap-4 text-left">
-              {/* Method Switcher: Email or Phone */}
-              <div className="flex bg-slate-100 p-1 rounded-2xl">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setLoginMethod('email');
-                    setError(null);
-                  }}
-                  className={`flex-1 py-2 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-                    loginMethod === 'email'
-                      ? 'bg-white text-slate-900 shadow-2xs'
-                      : 'text-slate-500 hover:text-slate-800'
-                  }`}
-                >
-                  <Mail className="w-3.5 h-3.5" />
-                  <span>Email Address</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setLoginMethod('phone');
-                    setError(null);
-                  }}
-                  className={`flex-1 py-2 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-                    loginMethod === 'phone'
-                      ? 'bg-white text-slate-900 shadow-2xs'
-                      : 'text-slate-500 hover:text-slate-800'
-                  }`}
-                >
-                  <Phone className="w-3.5 h-3.5" />
-                  <span>Phone Number</span>
-                </button>
-              </div>
-
-              {/* Identifier Input */}
-              <div className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-2xs flex flex-col gap-1 focus-within:border-[#a73605] focus-within:ring-2 focus-within:ring-[#a73605]/15 transition-all">
-                <label className="text-[11px] font-extrabold text-slate-600 uppercase tracking-wider">
-                  {loginMethod === 'email' ? 'Email Address' : 'Phone Number'}
+            {/* Password */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className="block text-[11px] font-extrabold text-slate-500 uppercase tracking-widest">
+                  Password
                 </label>
-                <div className="flex items-center gap-3">
-                  {loginMethod === 'email' ? (
-                    <Mail className="w-5 h-5 text-slate-400 shrink-0" />
-                  ) : (
-                    <Phone className="w-5 h-5 text-slate-400 shrink-0" />
-                  )}
-                  <input
-                    type={loginMethod === 'email' ? 'email' : 'tel'}
-                    value={identifier}
-                    onChange={(e) => {
-                      setIdentifier(e.target.value);
-                      setError(null);
-                    }}
-                    placeholder={loginMethod === 'email' ? 'parent@example.com' : '08012345678'}
-                    autoComplete={loginMethod === 'email' ? 'email' : 'tel'}
-                    className="w-full text-sm font-semibold text-slate-900 bg-transparent outline-none placeholder:text-slate-400"
-                  />
-                </div>
+                <Link
+                  to="/parent/auth"
+                  className="text-[11px] font-bold text-[#B83806] hover:underline"
+                >
+                  Forgot?
+                </Link>
               </div>
-
-              {/* Password Input */}
-              <div className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-2xs flex flex-col gap-1 focus-within:border-[#a73605] focus-within:ring-2 focus-within:ring-[#a73605]/15 transition-all">
-                <div className="flex items-center justify-between">
-                  <label className="text-[11px] font-extrabold text-slate-600 uppercase tracking-wider">
-                    Password
-                  </label>
-                  <Link
-                    to="/parent/forgot-pin"
-                    className="text-[11px] font-bold text-[#a73605] hover:underline"
-                  >
-                    Forgot?
-                  </Link>
-                </div>
-                <div className="flex items-center gap-3">
-                  <Lock className="w-5 h-5 text-slate-400 shrink-0" />
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    value={password}
-                    onChange={(e) => {
-                      setPassword(e.target.value);
-                      setError(null);
-                    }}
-                    placeholder="Enter your password"
-                    autoComplete="current-password"
-                    className="w-full text-sm font-semibold text-slate-900 bg-transparent outline-none placeholder:text-slate-400"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="text-slate-400 hover:text-slate-600 p-1 cursor-pointer"
-                    aria-label={showPassword ? 'Hide password' : 'Show password'}
-                  >
-                    {showPassword ? (
-                      <EyeOff className="w-4 h-4 stroke-[2]" />
-                    ) : (
-                      <Eye className="w-4 h-4 stroke-[2]" />
-                    )}
-                  </button>
-                </div>
+              <div className="flex items-center gap-3 bg-[#FFFBF8] border border-[#F3E8DF] rounded-2xl px-4 py-3.5 focus-within:border-[#B83806] focus-within:ring-2 focus-within:ring-[#B83806]/10 transition-all">
+                <Lock className="w-4 h-4 text-slate-400 stroke-[1.8] shrink-0" />
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={(e) => { setPassword(e.target.value); setError(null); }}
+                  placeholder="Your password"
+                  autoComplete="current-password"
+                  className="w-full text-sm text-slate-800 bg-transparent outline-none placeholder:text-slate-300"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
+                >
+                  {showPassword
+                    ? <EyeOff className="w-4 h-4 stroke-[1.8]" />
+                    : <Eye className="w-4 h-4 stroke-[1.8]" />}
+                </button>
               </div>
+            </div>
 
-              {/* Error banner */}
-              {error && (
-                <div className="flex items-center gap-2 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-bold animate-shake">
-                  <AlertCircle className="w-4 h-4 shrink-0" />
-                  <span>{error}</span>
-                </div>
-              )}
-
-              {/* Submit CTA */}
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="w-full py-4 px-6 rounded-2xl bg-[#a73605] hover:bg-[#8e2e04] active:scale-[0.99] disabled:opacity-60 text-white font-extrabold text-base shadow-lg shadow-[#a73605]/20 flex items-center justify-center gap-2 transition-all cursor-pointer mt-2"
-              >
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                    <span>Signing in...</span>
-                  </>
-                ) : (
-                  <>
-                    <span>Log In</span>
-                    <ArrowRight className="w-5 h-5 stroke-[2.4]" />
-                  </>
-                )}
-              </button>
-            </form>
+            {error && (
+              <div className="flex items-center gap-2 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-bold">
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                <span>{error}</span>
+              </div>
+            )}
           </div>
 
-          {/* Footer */}
-          <div className="flex flex-col items-center text-center gap-2 pt-8 pb-4 text-xs text-slate-500">
-            <p>
-              Don&apos;t have a parent account yet?{' '}
-              <Link
-                to="/parent/register"
-                className="font-bold text-[#a73605] hover:underline"
-              >
-                Register here
-              </Link>
-            </p>
-          </div>
-        </main>
+          {/* Submit */}
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className="w-full py-4 rounded-2xl bg-[#B83806] hover:bg-[#9A2F05] active:scale-[0.99] disabled:opacity-60 text-white font-extrabold text-base shadow-lg shadow-[#B83806]/20 flex items-center justify-center gap-2 transition-all cursor-pointer"
+          >
+            <span>{isSubmitting ? 'Signing in...' : 'Log In'}</span>
+          </button>
+
+          <p className="text-center text-sm text-slate-500">
+            Don&apos;t have an account?{' '}
+            <Link to="/parent/auth" className="font-bold text-[#B83806] hover:underline">
+              Register here
+            </Link>
+          </p>
+        </form>
       </div>
     </div>
   );

@@ -5,6 +5,7 @@ import { ProfileService } from '../services/profileService';
 import { ProgressService } from '../services/progressService';
 import { StreakService } from '../services/streakService';
 import { ChallengeService } from '../services/challengeService';
+import { SkillsService } from '../services/skillsService';
 import { ChildApiClient } from '../services/api/childApiClient';
 import { AppContext } from './AppContextObject';
 
@@ -51,6 +52,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (todayAssignment.status === 'fulfilled') {
         setIsDailyCompleted(ChallengeService.isDailyChallengeCompletedToday());
       }
+
+      // Warm up skills cache in background (non-blocking)
+      SkillsService.fetchAndCache().catch(() => { /* best-effort */ });
     } catch (err) {
       console.warn('[AppContext] Error during background backend sync:', err);
     } finally {

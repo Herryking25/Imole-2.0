@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate, useLocation, Link } from 'react-router-dom';
-import { ArrowLeft, ArrowRight, Mail, Pencil } from 'lucide-react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { ArrowLeft, Mail, Pencil } from 'lucide-react';
 import { ParentProfileService } from '../../services/parentProfileService';
 
 export const ParentVerifyEmailPage: React.FC = () => {
@@ -13,12 +13,14 @@ export const ParentVerifyEmailPage: React.FC = () => {
     'folake.adeyemi@gmail.com';
 
   const [email] = useState<string>(passedEmail);
-  const [digits, setDigits] = useState<string[]>(['5', '8', '2', '9', '', '']);
+  const [digits, setDigits] = useState<string[]>(['', '', '', '', '', '']);
   const [timer, setTimer] = useState<number>(48);
   const [canResend, setCanResend] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
 
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+
+  const isResetFlow = Boolean((location.state as { isResetFlow?: boolean })?.isResetFlow);
 
   // Countdown timer
   useEffect(() => {
@@ -36,24 +38,20 @@ export const ParentVerifyEmailPage: React.FC = () => {
     }
   }, [timer]);
 
-  // Handle single digit input
   const handleChange = (index: number, value: string) => {
     setError('');
-    const char = value.slice(-1); // Take the latest character typed
-
-    if (char && !/^\d$/.test(char)) return; // Only allow digits
+    const char = value.slice(-1);
+    if (char && !/^\d$/.test(char)) return;
 
     const newDigits = [...digits];
     newDigits[index] = char;
     setDigits(newDigits);
 
-    // Auto-focus next input
     if (char && index < 5) {
       inputRefs.current[index + 1]?.focus();
     }
   };
 
-  // Handle backspace navigation
   const handleKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Backspace') {
       if (!digits[index] && index > 0) {
@@ -65,7 +63,6 @@ export const ParentVerifyEmailPage: React.FC = () => {
     }
   };
 
-  // Handle paste full code
   const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
     e.preventDefault();
     const pasted = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
@@ -87,8 +84,6 @@ export const ParentVerifyEmailPage: React.FC = () => {
     setError('');
   };
 
-  const isResetFlow = Boolean((location.state as { isResetFlow?: boolean })?.isResetFlow);
-
   const handleVerify = (e: React.FormEvent) => {
     e.preventDefault();
     const code = digits.join('');
@@ -98,158 +93,127 @@ export const ParentVerifyEmailPage: React.FC = () => {
       return;
     }
 
-    // Mark email verified and navigate to PIN setup
     ParentProfileService.setEmailVerified(true);
-    navigate('/parent/set-pin', { state: { isResetFlow: true } });
+    navigate('/parent/set-pin', { state: { isResetFlow } });
   };
 
-  // Format timer as 00:XX
   const formattedTimer = `00:${timer < 10 ? `0${timer}` : timer}`;
 
   return (
-    <div className="min-h-screen bg-[#faf7f2] flex flex-col justify-between py-6 px-4 sm:px-6 select-none font-sans">
-      <div className="max-w-md w-full mx-auto flex flex-col justify-between min-h-[88vh]">
+    <div className="min-h-screen bg-[#FFF8F6] flex flex-col font-sans select-none">
+      <div className="flex-1 flex flex-col max-w-sm w-full mx-auto px-5 py-6">
 
-        {/* ── Top Bar ── */}
-        <div>
-          <div className="flex items-center justify-between pt-1">
-            <button
-              onClick={() => navigate(isResetFlow ? '/parent/forgot-pin' : '/parent/register')}
-              className="w-11 h-11 rounded-full bg-white border border-slate-200/80 shadow-xs flex items-center justify-center text-slate-700 hover:bg-slate-50 active:scale-95 transition-all cursor-pointer"
-              aria-label="Go back"
-            >
-              <ArrowLeft className="w-5 h-5 stroke-[2.2]" />
-            </button>
+        {/* Top Bar */}
+        <div className="flex items-center justify-between mb-6">
+          <button
+            type="button"
+            onClick={() => navigate(isResetFlow ? '/parent/forgot-pin' : '/parent/register')}
+            className="w-10 h-10 rounded-full bg-white border border-slate-200 shadow-sm flex items-center justify-center text-slate-700 hover:bg-slate-50 active:scale-95 transition-all cursor-pointer"
+            aria-label="Go back"
+          >
+            <ArrowLeft className="w-5 h-5 stroke-[2.2]" />
+          </button>
 
-            {/* Step Pill */}
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#fff4ed] border border-[#fbcbb7] text-[#b83808] text-xs font-bold shadow-2xs">
-              <span className="w-2 h-2 rounded-full bg-[#b83808]" />
-              <span>{isResetFlow ? 'Security Verification' : 'Step 1 of 2 · Parent Profile'}</span>
-            </div>
-
-            {/* Balancing placeholder */}
-            <div className="w-11" />
+          {/* Step Pill */}
+          <div className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-[#FFF1ED] border border-[#FBCBB7] text-[#B83806] text-xs font-bold">
+            <span className="w-2 h-2 rounded-full bg-[#B83806]" />
+            <span>{isResetFlow ? 'Security Verification' : 'Step 1 of 2'}</span>
           </div>
 
-          {/* ── Center Header Icon ── */}
-          <div className="flex flex-col items-center text-center mt-6">
-            <div className="w-16 h-16 rounded-[22px] bg-gradient-to-b from-[#fde6d8] via-[#ffdcd0] to-[#fbcbb7] flex items-center justify-center shadow-xs mb-3">
-              <Mail className="w-8 h-8 text-[#8a2908] stroke-[2]" />
-            </div>
+          <div className="w-10" />
+        </div>
 
-            {/* Title */}
-            <h1 className="text-2xl sm:text-[26px] font-extrabold text-[#292524] tracking-tight">
-              Verify Your Email
-            </h1>
-
-            {/* Subtitle with email chip */}
-            <p className="text-xs sm:text-[13px] text-slate-500 max-w-sm mt-2 font-medium">
-              We sent a 6-digit confirmation code to
-            </p>
-
-            <button
-              type="button"
-              onClick={() => navigate('/parent/register')}
-              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 mt-2 rounded-full bg-[#fff4ed] border border-[#fed7aa] text-xs font-bold text-slate-800 hover:bg-[#ffedd5] transition-colors cursor-pointer"
-            >
-              <span>{email}</span>
-              <Pencil className="w-3.5 h-3.5 text-[#b83808] stroke-[2.2]" />
-            </button>
+        {/* Header */}
+        <div className="flex flex-col items-center text-center mb-6">
+          <div className="w-16 h-16 rounded-[20px] bg-[#FFF1ED] flex items-center justify-center mb-4">
+            <Mail className="w-8 h-8 text-[#B83806] stroke-[1.8]" />
           </div>
 
-          {/* ── Passcode Card ── */}
-          <form onSubmit={handleVerify} className="mt-6 flex flex-col gap-4">
-            <div className="bg-white rounded-[28px] p-6 border border-slate-100 shadow-[0_4px_24px_rgba(0,0,0,0.03)] flex flex-col items-center gap-4 text-center">
-              
-              <label className="text-[11px] font-extrabold text-slate-500 uppercase tracking-wider">
-                Enter 6–Digit Passcode
-              </label>
+          <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight mb-2">
+            Verify Your Email
+          </h1>
 
-              {/* 6 Digit Input Boxes */}
-              <div className="flex items-center justify-center gap-2 sm:gap-2.5 w-full my-1">
-                {digits.map((digit, index) => (
-                  <input
-                    key={index}
-                    ref={(el) => {
-                      inputRefs.current[index] = el;
-                    }}
-                    type="text"
-                    inputMode="numeric"
-                    pattern="[0-9]*"
-                    maxLength={1}
-                    value={digit}
-                    onChange={(e) => handleChange(index, e.target.value)}
-                    onKeyDown={(e) => handleKeyDown(index, e)}
-                    onPaste={handlePaste}
-                    className={`w-11 h-13 sm:w-12 sm:h-14 rounded-2xl text-center text-xl sm:text-2xl font-black transition-all outline-none ${
-                      digit
-                        ? 'bg-[#fffbf8] border border-slate-200 text-slate-900'
-                        : 'bg-[#fffbf8] border border-slate-200 text-slate-400'
-                    } focus:border-2 focus:border-[#b83808] focus:bg-white focus:shadow-xs`}
-                  />
-                ))}
-              </div>
+          <p className="text-sm text-slate-500 font-medium mb-3">
+            We sent a 6-digit confirmation code to
+          </p>
 
-              {/* Resend row */}
-              <div className="flex items-center justify-center gap-2 pt-2 text-xs font-medium text-slate-500">
-                <span>Didn&apos;t receive code?</span>
-                {canResend ? (
-                  <button
-                    type="button"
-                    onClick={handleResend}
-                    className="font-bold text-[#b83808] hover:underline cursor-pointer"
-                  >
-                    Resend Code
-                  </button>
-                ) : (
-                  <span className="flex items-center gap-1">
-                    <span>Resend in</span>
-                    <span className="px-2 py-0.5 rounded-md bg-[#fff4ed] text-[#b83808] font-bold">
-                      {formattedTimer}
-                    </span>
-                  </span>
-                )}
-              </div>
+          {/* Email chip with edit icon */}
+          <button
+            type="button"
+            onClick={() => navigate('/parent/register')}
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#FFF1ED] border border-[#FBCBB7] text-sm font-semibold text-slate-800 hover:bg-[#FFE4D9] transition-colors cursor-pointer"
+          >
+            <span>{email}</span>
+            <Pencil className="w-3.5 h-3.5 text-[#B83806] stroke-[2]" />
+          </button>
+        </div>
 
-              {error && (
-                <p className="text-xs font-bold text-rose-600 mt-1">{error}</p>
+        {/* Passcode Card */}
+        <form onSubmit={handleVerify} className="flex flex-col gap-4 flex-1">
+          <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm flex flex-col items-center gap-4 text-center">
+
+            <label className="text-[11px] font-extrabold text-slate-500 uppercase tracking-widest">
+              Enter 6-Digit Passcode
+            </label>
+
+            {/* 6 input boxes */}
+            <div className="flex items-center justify-center gap-2 w-full">
+              {digits.map((digit, index) => (
+                <input
+                  key={index}
+                  ref={(el) => { inputRefs.current[index] = el; }}
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  maxLength={1}
+                  value={digit}
+                  onChange={(e) => handleChange(index, e.target.value)}
+                  onKeyDown={(e) => handleKeyDown(index, e)}
+                  onPaste={handlePaste}
+                  className={`w-11 h-13 rounded-2xl text-center text-xl font-black transition-all outline-none border ${
+                    digit
+                      ? 'bg-[#FFFBF8] border-slate-200 text-slate-900'
+                      : 'bg-[#FFFBF8] border-slate-200 text-slate-400'
+                  } focus:border-2 focus:border-[#B83806] focus:bg-white`}
+                />
+              ))}
+            </div>
+
+            {/* Resend row */}
+            <div className="flex items-center justify-center gap-1.5 text-xs font-medium text-slate-500">
+              <span>Didn&apos;t receive code?</span>
+              {canResend ? (
+                <button
+                  type="button"
+                  onClick={handleResend}
+                  className="font-bold text-[#B83806] hover:underline cursor-pointer"
+                >
+                  Resend Code
+                </button>
+              ) : (
+                <span>
+                  Resend in{' '}
+                  <span className="font-bold text-[#B83806]">{formattedTimer}</span>
+                </span>
               )}
             </div>
 
-            {/* ── Primary CTA Button ── */}
-            <div className="pt-2">
-              <button
-                type="submit"
-                className="w-full py-4 px-6 rounded-2xl bg-[#a73605] hover:bg-[#8e2e04] active:scale-[0.99] text-white font-extrabold text-base shadow-lg shadow-[#a73605]/25 flex items-center justify-center gap-2 transition-all cursor-pointer"
-              >
-                <span>Verify &amp; Continue to PIN Setup</span>
-                <ArrowRight className="w-5 h-5 stroke-[2.5]" />
-              </button>
-            </div>
-          </form>
-
-          {/* ── Footer Links ── */}
-          <div className="flex flex-col items-center text-center gap-1 mt-5 text-xs text-slate-500">
-            <p>
-              Wrong email address?{' '}
-              <button
-                type="button"
-                onClick={() => navigate('/parent/register')}
-                className="font-bold text-[#b83808] hover:underline cursor-pointer"
-              >
-                Change Email
-              </button>
-            </p>
-            <p className="text-[11px] text-slate-400 mt-0.5">
-              Need help? Contact{' '}
-              <Link to="/child/settings" className="underline hover:text-slate-600">
-                IMOLE Parent Support
-              </Link>
-            </p>
+            {error && (
+              <p className="text-xs font-bold text-rose-600">{error}</p>
+            )}
           </div>
-        </div>
 
-        <div className="h-4" />
+          {/* CTA Button */}
+          <div className="pt-2 pb-2">
+            <button
+              type="submit"
+              className="w-full py-4 rounded-2xl bg-[#B83806] hover:bg-[#9A2F05] active:scale-[0.99] text-white font-extrabold text-base shadow-lg shadow-[#B83806]/20 flex items-center justify-center transition-all cursor-pointer"
+            >
+              Verify &amp; Continue
+            </button>
+          </div>
+        </form>
+
       </div>
     </div>
   );

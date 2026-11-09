@@ -1,14 +1,11 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import { ChildNavbar } from '../components/navigation/ChildNavbar';
 import { ChildSidebar } from '../components/navigation/ChildSidebar';
 import { BottomNav } from '../components/navigation/BottomNav';
-import { ChildPageLoader } from '../components/common/ChildPageLoader';
 
 export const ChildLayout: React.FC = () => {
   const location = useLocation();
-  const [isLoading, setIsLoading] = useState(false);
-  const prevPathRef = useRef(location.pathname);
 
   const isAboutYourself =
     location.pathname.includes('aboutyourself') ||
@@ -19,80 +16,43 @@ export const ChildLayout: React.FC = () => {
     isAboutYourself ||
     location.pathname === '/child/onboarding';
 
+  // Hide top navbar on dashboard and onboarding pages
   const isDashboardOrOnboarding =
     location.pathname === '/child' ||
     location.pathname === '/child/dashboard' ||
     isOnboardingPage ||
     location.pathname === '/child/settings';
 
-  // Determine contextual loading message based on destination
-  const getLoadingMessage = (pathname: string) => {
-    if (pathname === '/child' || pathname === '/child/dashboard') {
-      return 'Lighting up your daily dashboard... ☀️';
-    }
-    if (pathname === '/child/challenge') {
-      return 'Loading your challenges & skill quests... 🧩';
-    }
-    if (pathname === '/child/progress') {
-      return 'Calculating your skill percentages & stars... 📈';
-    }
-    if (pathname === '/child/leaderboard') {
-      return 'Checking the champion ranks... 🏆';
-    }
-    if (pathname === '/child/settings') {
-      return 'Opening your settings & preferences... ⚙️';
-    }
-    return 'Loading your adventure... ✨';
-  };
-
-  const LOADER_DURATION_MS = 5000; // 5 seconds
-
-  useEffect(() => {
-    // Only trigger transition loader if path actually changed
-    if (prevPathRef.current !== location.pathname) {
-      prevPathRef.current = location.pathname;
-      setIsLoading(true);
-
-      const timer = setTimeout(() => {
-        setIsLoading(false);
-      }, LOADER_DURATION_MS);
-
-      return () => clearTimeout(timer);
-    }
-  }, [location.pathname]);
-
-  const handleSkipLoading = () => {
-    setIsLoading(false);
-  };
+  // Hide bottom nav + sidebar on challenge player & result pages (full-screen experience)
+  const isFullScreenPage =
+    location.pathname.startsWith('/child/challenge/play') ||
+    location.pathname.startsWith('/child/challenge/result');
 
   return (
-    <div className="min-h-screen bg-[#faf8f5]/60 md:bg-white flex flex-col md:flex-row relative">
-      {/* Top Animated Loading Line Indicator */}
-      {isLoading && (
-        <div className="fixed top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-amber-400 via-[#ea580c] to-[#a73605] z-50 animate-pulse" />
+    <div className="h-screen w-full bg-[#FFF8F6] md:bg-white flex flex-col md:flex-row relative overflow-hidden">
+      {/* Desktop Left Sidebar */}
+      {!isOnboardingPage && !isFullScreenPage && (
+        <ChildSidebar className="hidden md:flex shrink-0 h-full overflow-y-auto" />
       )}
 
-      {/* Desktop Left Sidebar (hidden on onboarding screens for focused experience) */}
-      {!isOnboardingPage && <ChildSidebar className="hidden md:flex" />}
-
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0 bg-[#faf8f5]/60 md:bg-white min-h-screen">
-        {/* On non-dashboard pages, show navbar for streaks and score */}
-        {!isDashboardOrOnboarding && <ChildNavbar />}
+      <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
+        {/* Top navbar for streaks/score on non-dashboard pages */}
+        {!isDashboardOrOnboarding && !isFullScreenPage && (
+          <div className="shrink-0 z-20">
+            <ChildNavbar />
+          </div>
+        )}
 
-        <main className="flex-1 w-full flex flex-col">
-          {isLoading ? (
-            <ChildPageLoader
-              message={getLoadingMessage(location.pathname)}
-              durationMs={LOADER_DURATION_MS}
-              onSkip={handleSkipLoading}
-            />
-          ) : (
-            <Outlet />
-          )}
+        <main className="flex-1 w-full flex flex-col overflow-y-auto pb-16 md:pb-8">
+          <Outlet />
         </main>
 
-        {!isOnboardingPage && <BottomNav />}
+        {!isOnboardingPage && !isFullScreenPage && (
+          <div className="shrink-0 z-20 md:hidden">
+            <BottomNav />
+          </div>
+        )}
       </div>
     </div>
   );

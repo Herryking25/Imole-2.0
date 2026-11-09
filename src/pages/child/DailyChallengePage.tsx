@@ -1,14 +1,10 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, ChevronRight, CheckCircle2, Lock, Star, Send, RefreshCw, Sparkles } from 'lucide-react';
+import { ArrowLeft, ChevronRight, CheckCircle2, Lock, Star, RefreshCw, Sparkles } from 'lucide-react';
 import { useDailyChallenge } from '../../hooks/useDailyChallenge';
 import { useApp } from '../../hooks/useApp';
 import { useLanguage } from '../../hooks/useLanguage';
-import { CURATED_CHALLENGES } from '../../data/challenges';
-import { Modal } from '../../components/common/Modal';
-import { FeedbackModal } from '../../components/child/FeedbackModal';
-import type { Challenge } from '../../types/challenge';
-import type { SubmissionFeedback } from '../../types/submission';
+
 
 export const DailyChallengePage: React.FC = () => {
   const navigate = useNavigate();
@@ -20,16 +16,9 @@ export const DailyChallengePage: React.FC = () => {
     swapsRemaining,
     isSwapping,
     swap,
-    submit,
-    isSubmitting,
   } = useDailyChallenge();
 
   const [selectedFilter, setSelectedFilter] = useState<string>('all');
-  const [activeChallengeModal, setActiveChallengeModal] = useState<Challenge | null>(null);
-  const [selectedOptionId, setSelectedOptionId] = useState<string>('');
-  const [textResponse, setTextResponse] = useState<string>('');
-  const [modalFeedback, setModalFeedback] = useState<SubmissionFeedback | null>(null);
-  const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
   const [swapToast, setSwapToast] = useState<string>('');
 
   // Skill filter list
@@ -109,22 +98,9 @@ export const DailyChallengePage: React.FC = () => {
       ? featuredChallenges
       : featuredChallenges.filter((c) => c.skillId === selectedFilter);
 
-  // Handle open challenge
+  // Navigate to challenge player page instead of opening modal
   const handleOpenChallenge = (challengeId: string) => {
-    if (challengeId === dailyChallenge.id || challengeId === 'today') {
-      setActiveChallengeModal(dailyChallenge);
-      setSelectedOptionId('');
-      setTextResponse('');
-      return;
-    }
-
-    const found =
-      CURATED_CHALLENGES.find((c) => c.id === challengeId) ||
-      CURATED_CHALLENGES.find((c) => c.skillId === selectedFilter) ||
-      CURATED_CHALLENGES[0];
-    setActiveChallengeModal(found);
-    setSelectedOptionId('');
-    setTextResponse('');
+    navigate(`/child/challenge/play/${challengeId}`);
   };
 
   // Handle swap challenge
@@ -139,22 +115,7 @@ export const DailyChallengePage: React.FC = () => {
     }
   };
 
-  // Submit challenge answer
-  const handleSubmitChallenge = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!activeChallengeModal) return;
 
-    let responseText = textResponse;
-    if (activeChallengeModal.type === 'mcq' && selectedOptionId) {
-      const opt = activeChallengeModal.options?.find((o) => o.id === selectedOptionId);
-      responseText = opt ? opt.text[language] || opt.text.en : selectedOptionId;
-    }
-
-    const feedback = await submit(responseText, selectedOptionId || undefined);
-    setActiveChallengeModal(null);
-    setModalFeedback(feedback);
-    setIsFeedbackOpen(true);
-  };
 
   return (
     <div className="flex-1 min-h-screen bg-[#faf8f5]/50 md:bg-white flex flex-col py-4 px-4 sm:px-8 pb-28 sm:pb-8 animate-in fade-in duration-300">
@@ -445,85 +406,6 @@ export const DailyChallengePage: React.FC = () => {
         </div>
 
       </div>
-
-      {/* ── Interactive Challenge Quiz Modal ── */}
-      {activeChallengeModal && (
-        <Modal
-          isOpen={Boolean(activeChallengeModal)}
-          onClose={() => setActiveChallengeModal(null)}
-          title={activeChallengeModal.title[language] || activeChallengeModal.title.en}
-        >
-          <form onSubmit={handleSubmitChallenge} className="flex flex-col gap-4 text-left">
-            <p className="text-sm font-medium text-slate-600 bg-amber-50/70 border border-amber-200/70 p-3.5 rounded-2xl">
-              {activeChallengeModal.scenario[language] || activeChallengeModal.scenario.en}
-            </p>
-
-            <h3 className="text-base font-extrabold text-slate-900">
-              {activeChallengeModal.question[language] || activeChallengeModal.question.en}
-            </h3>
-
-            {activeChallengeModal.type === 'mcq' && activeChallengeModal.options && (
-              <div className="flex flex-col gap-2.5">
-                {activeChallengeModal.options.map((opt, idx) => {
-                  const isSelected = selectedOptionId === opt.id;
-                  return (
-                    <button
-                      key={opt.id}
-                      type="button"
-                      onClick={() => setSelectedOptionId(opt.id)}
-                      className={`w-full p-3.5 rounded-2xl border-2 text-left text-sm font-bold transition-all flex items-center justify-between cursor-pointer ${
-                        isSelected
-                          ? 'border-[#a73605] bg-[#fff7ed] text-[#a73605] shadow-xs'
-                          : 'border-slate-200 bg-white text-slate-800 hover:border-slate-300'
-                      }`}
-                    >
-                      <span className="flex items-center gap-2.5">
-                        <span className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center text-xs text-slate-600">
-                          {String.fromCharCode(65 + idx)}
-                        </span>
-                        <span>{opt.text[language] || opt.text.en}</span>
-                      </span>
-                      {isSelected && <CheckCircle2 className="w-5 h-5 text-[#a73605]" />}
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-
-            {activeChallengeModal.type === 'text' && (
-              <textarea
-                value={textResponse}
-                onChange={(e) => setTextResponse(e.target.value)}
-                rows={3}
-                placeholder="Write your thoughtful answer here..."
-                className="w-full p-3 rounded-2xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#a73605]/30 resize-none"
-              />
-            )}
-
-            <button
-              type="submit"
-              disabled={isSubmitting || (activeChallengeModal.type === 'mcq' ? !selectedOptionId : !textResponse.trim())}
-              className="w-full py-3.5 rounded-full bg-[#a73605] hover:bg-[#8e2e04] active:scale-95 disabled:opacity-50 text-white font-bold text-sm tracking-wide shadow-md shadow-[#a73605]/20 flex items-center justify-center gap-2 cursor-pointer transition-all mt-2"
-            >
-              {isSubmitting ? (
-                <span>Submitting...</span>
-              ) : (
-                <>
-                  <Send className="w-4 h-4" />
-                  <span>Submit Answer</span>
-                </>
-              )}
-            </button>
-          </form>
-        </Modal>
-      )}
-
-      {/* ── Feedback Celebration Modal ── */}
-      <FeedbackModal
-        isOpen={isFeedbackOpen}
-        onClose={() => setIsFeedbackOpen(false)}
-        feedback={modalFeedback}
-      />
     </div>
   );
 };

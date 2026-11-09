@@ -10,6 +10,8 @@ import type {
   GetProgressResponse,
   LinkCodeResponse,
   GetLeaderboardResponse,
+  GetSkillsResponse,
+  GetSkillResponse,
 } from '../../types/childApi';
 
 const TOKEN_KEY = 'imole_v1_child_token';
@@ -169,6 +171,20 @@ export class ChildApiClient {
 
   static async getLeaderboard(period: 'weekly' | 'all_time' = 'weekly'): Promise<GetLeaderboardResponse> {
     return this.request<GetLeaderboardResponse>(`/leaderboard?period=${period}`, {
+      method: 'GET',
+    });
+  }
+
+  // ── Skills Endpoints ──
+
+  static async getSkills(): Promise<GetSkillsResponse> {
+    return this.request<GetSkillsResponse>('/skills', {
+      method: 'GET',
+    });
+  }
+
+  static async getSkillById(id: string): Promise<GetSkillResponse> {
+    return this.request<GetSkillResponse>(`/skills/${id}`, {
       method: 'GET',
     });
   }

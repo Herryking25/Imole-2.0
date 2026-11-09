@@ -10,6 +10,7 @@ import type {
   GetChildProgressResponse,
   ShareCardData,
   BackendCertificateItem,
+  ChallengeHistoryItem,
 } from '../types/parentApi';
 import { ParentApiClient } from '../services/api/parentApiClient';
 import { ParentContext } from './ParentContextObject';
@@ -49,6 +50,9 @@ export const ParentProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [isLoadingProgress, setIsLoadingProgress] = useState<boolean>(false);
   const [isLoadingShareCard, setIsLoadingShareCard] = useState<boolean>(false);
   const [isLoadingCertificates, setIsLoadingCertificates] = useState<boolean>(false);
+
+  const [challengeHistory, setChallengeHistory] = useState<ChallengeHistoryItem[]>([]);
+  const [isLoadingChallengeHistory, setIsLoadingChallengeHistory] = useState<boolean>(false);
 
   const isAuthenticated = Boolean(ParentApiClient.hasToken());
 
@@ -146,6 +150,24 @@ export const ParentProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
   }, [selectedChild?._id]);
 
+  // Refresh challenge history for child
+  const refreshChallengeHistory = useCallback(async (targetChildId?: string) => {
+    const activeId = targetChildId || selectedChild?._id;
+    if (!ParentApiClient.hasToken() || !activeId) return;
+
+    setIsLoadingChallengeHistory(true);
+    try {
+      const res = await ParentApiClient.getChildChallengeHistory(activeId);
+      if (res.success && Array.isArray(res.assignments)) {
+        setChallengeHistory(res.assignments);
+      }
+    } catch (err) {
+      console.warn('[ParentContext] Failed to fetch challenge history:', err);
+    } finally {
+      setIsLoadingChallengeHistory(false);
+    }
+  }, [selectedChild?._id]);
+
   // Load children when authenticated on mount
   useEffect(() => {
     if (isAuthenticated) {
@@ -159,8 +181,9 @@ export const ParentProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       refreshProgress(selectedChild._id);
       refreshCertificates(selectedChild._id);
       refreshShareCard(selectedChild._id);
+      refreshChallengeHistory(selectedChild._id);
     }
-  }, [selectedChild?._id, isAuthenticated, refreshProgress, refreshCertificates, refreshShareCard]);
+  }, [selectedChild?._id, isAuthenticated, refreshProgress, refreshCertificates, refreshShareCard, refreshChallengeHistory]);
 
   // Login handler
   const login = useCallback(
@@ -199,6 +222,7 @@ export const ParentProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     setProgressData(null);
     setShareCardData(null);
     setCertificates([]);
+    setChallengeHistory([]);
     localStorage.removeItem(PARENT_USER_KEY);
     localStorage.removeItem(PARENT_CHILDREN_KEY);
     localStorage.removeItem(SELECTED_CHILD_KEY);
@@ -222,10 +246,11 @@ export const ParentProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         refreshProgress(res.child._id);
         refreshCertificates(res.child._id);
         refreshShareCard(res.child._id);
+        refreshChallengeHistory(res.child._id);
       }
       return res;
     },
-    [setSelectedChildId, refreshProgress, refreshCertificates, refreshShareCard]
+    [setSelectedChildId, refreshProgress, refreshCertificates, refreshShareCard, refreshChallengeHistory]
   );
 
   return (
@@ -240,10 +265,12 @@ export const ParentProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         progressData,
         shareCardData,
         certificates,
+        challengeHistory,
         isLoadingChildren,
         isLoadingProgress,
         isLoadingShareCard,
         isLoadingCertificates,
+        isLoadingChallengeHistory,
         login,
         register,
         logout,
@@ -252,6 +279,7 @@ export const ParentProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         refreshProgress,
         refreshShareCard,
         refreshCertificates,
+        refreshChallengeHistory,
       }}
     >
       {children}

@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { Home, TrendingUp, BarChart3, Settings } from 'lucide-react';
+import { Home, TrendingUp, BarChart3, Settings, Puzzle, Users } from 'lucide-react';
 import { ImoleLogo } from '../common/ImoleLogo';
 
 interface ChildSidebarProps {
@@ -11,13 +11,15 @@ export const ChildSidebar: React.FC<ChildSidebarProps> = ({ className = '' }) =>
   const location = useLocation();
   const isParentFlow = location.pathname.startsWith('/parent');
 
-  // Check active states
   const isHomeActive =
     location.pathname === '/child' ||
     location.pathname === '/child/dashboard' ||
-    location.pathname === '/child/welcome' ||
-    location.pathname === '/parent' ||
-    location.pathname === '/parent/certificates';
+    location.pathname === '/child/welcome';
+
+  const isChallengeActive =
+    location.pathname === '/child/challenge' ||
+    location.pathname === '/child/feedback' ||
+    location.pathname.startsWith('/child/challenge/');
 
   const isProgressActive =
     location.pathname === '/child/progress' ||
@@ -31,102 +33,76 @@ export const ChildSidebar: React.FC<ChildSidebarProps> = ({ className = '' }) =>
     location.pathname === '/child/about-yourself' ||
     location.pathname === '/parent/language';
 
+  const isParentActive = location.pathname.startsWith('/parent');
+
   // Dynamic route targets
   const homeTarget = isParentFlow ? '/parent' : '/child/dashboard';
   const progressTarget = isParentFlow ? '/parent/share' : '/child/progress';
-  const leaderboardTarget = '/child/leaderboard';
   const settingsTarget = isParentFlow ? '/parent/language' : '/child/settings';
+
+  const navItems = [
+    { to: homeTarget, icon: Home, label: 'Home', isActive: isHomeActive && !isParentFlow },
+    { to: '/child/challenge', icon: Puzzle, label: 'Challenges', isActive: isChallengeActive },
+    { to: progressTarget, icon: TrendingUp, label: 'Progress', isActive: isProgressActive },
+    { to: '/child/leaderboard', icon: BarChart3, label: 'Leaderboard', isActive: isLeaderboardActive },
+    { to: '/parent', icon: Users, label: 'Parent Portal', isActive: isParentActive },
+    { to: settingsTarget, icon: Settings, label: 'Settings', isActive: isSettingsActive },
+  ];
 
   return (
     <aside
-      className={`w-64 lg:w-72 bg-[#fdf5ee] border-r border-[#f5e3d4] flex flex-col justify-between p-6 select-none shrink-0 min-h-screen ${className}`}
+      className={`w-60 lg:w-64 bg-[#FDF5EE] border-r border-[#F5E3D4] flex flex-col justify-between p-5 select-none shrink-0 h-full overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden ${className}`}
       aria-label="Navigation Sidebar"
     >
       <div>
         {/* Top Branding */}
-        <div className="flex flex-col items-center text-center pt-2 pb-6">
+        <div className="flex flex-col items-center text-center pt-2 pb-5">
           <div className="transform hover:scale-105 transition-transform duration-300">
-            <ImoleLogo size={94} withGlow={true} />
+            <ImoleLogo size={80} withGlow={true} />
           </div>
-
-          <h1 className="text-2xl font-black tracking-wider text-[#a73605] mt-4 mb-1 uppercase font-sans">
+          <h1 className="text-xl font-black tracking-wider text-[#B83806] mt-3 mb-0.5 uppercase">
             IMOLE
           </h1>
-
-          <p className="text-xs font-medium text-slate-700 tracking-tight">
+          <p className="text-[11px] font-medium text-slate-500 tracking-tight">
             Be the Light Among Your Peers
           </p>
         </div>
 
         {/* Navigation Links */}
-        <nav className="mt-6 space-y-2 font-medium">
-          {/* Home */}
-          <NavLink
-            to={homeTarget}
-            className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all ${
-              isHomeActive
-                ? 'bg-[#a73605] text-white shadow-xs'
-                : 'text-slate-600 hover:text-slate-900 hover:bg-[#f6e6d7]/70'
-            }`}
-          >
-            <Home className="w-5 h-5 stroke-[2.2]" />
-            <span>Home</span>
-          </NavLink>
-
-          {/* Progress */}
-          <NavLink
-            to={progressTarget}
-            className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all ${
-              isProgressActive
-                ? 'bg-[#a73605] text-white shadow-xs'
-                : 'text-slate-600 hover:text-slate-900 hover:bg-[#f6e6d7]/70'
-            }`}
-          >
-            <TrendingUp className="w-5 h-5 stroke-[2.2]" />
-            <span>Progress</span>
-          </NavLink>
-
-          {/* Leaderboard */}
-          <NavLink
-            to={leaderboardTarget}
-            className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all ${
-              isLeaderboardActive
-                ? 'bg-[#a73605] text-white shadow-xs'
-                : 'text-slate-600 hover:text-slate-900 hover:bg-[#f6e6d7]/70'
-            }`}
-          >
-            <BarChart3 className="w-5 h-5 stroke-[2.2]" />
-            <span>Leaderboard</span>
-          </NavLink>
-
-          {/* Settings */}
-          <NavLink
-            to={settingsTarget}
-            className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all ${
-              isSettingsActive
-                ? 'bg-[#a73605] text-white shadow-xs'
-                : 'text-slate-600 hover:text-slate-900 hover:bg-[#f6e6d7]/70'
-            }`}
-          >
-            <Settings className="w-5 h-5 stroke-[2.2]" />
-            <span>Settings</span>
-          </NavLink>
+        <nav className="mt-2 space-y-1">
+          {navItems.map((item) => {
+            const Icon = item.icon;
+            return (
+              <NavLink
+                key={item.label}
+                to={item.to}
+                className={`flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-bold transition-all ${
+                  item.isActive
+                    ? 'bg-[#B83806] text-white shadow-sm'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-[#F6E6D7]/70'
+                }`}
+              >
+                <Icon className="w-4 h-4 stroke-[2.2] flex-shrink-0" />
+                <span>{item.label}</span>
+              </NavLink>
+            );
+          })}
         </nav>
       </div>
 
       {/* Bottom switcher */}
-      <div className="pt-6 border-t border-[#f4dfcf]/70 text-center">
+      <div className="pt-4 border-t border-[#F4DFCF]/70 text-center">
         {isParentFlow ? (
           <NavLink
             to="/child/dashboard"
-            className="text-[11px] font-semibold text-slate-500 hover:text-[#a73605] transition-colors"
+            className="text-[11px] font-semibold text-slate-500 hover:text-[#B83806] transition-colors"
           >
             ← Switch to Child Portal
           </NavLink>
         ) : (
           <NavLink
             to="/parent"
-            className="text-[11px] font-semibold text-slate-500 hover:text-[#a73605] transition-colors"
+            className="text-[11px] font-semibold text-slate-500 hover:text-[#B83806] transition-colors"
           >
             Switch to Parent Portal →
           </NavLink>

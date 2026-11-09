@@ -126,3 +126,18 @@ export interface GetChildCertificatesResponse {
   certificates?: BackendCertificateItem[];
   message?: string;
 }
+
+export interface ChallengeHistoryItem {
+  _id: string;
+  challengeId?: string;
+  question?: string;
+  isCorrect: boolean;
+  submittedAt: string;
+  skillName?: string;
+}
+
+export interface GetChildChallengeHistoryResponse {
+  success: boolean;
+  assignments?: ChallengeHistoryItem[];
+  message?: string;
+}

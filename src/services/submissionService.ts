@@ -31,12 +31,30 @@ export class SubmissionService {
     // 1. Try remote submission if authenticated
     if (ChildApiClient.hasToken()) {
       try {
-        const payload = {
-          selectedOption: selectedOptionId || undefined,
-          responseText: response || undefined,
-        };
+        // Send only the relevant field per challenge type
+        const payload =
+          challenge.type === 'mcq' && selectedOptionId
+            ? { selectedOption: selectedOptionId }
+            : { responseText: response || '' };
 
         const res = await ChildApiClient.submitTodayChallenge(payload);
+
+        // 409 = already submitted today — return a neutral "already done" feedback
+        if (!res.success && res.message) {
+          const msgLower = (res.message || '').toLowerCase();
+          if (msgLower.includes('already') || msgLower.includes('409')) {
+            const streak = StreakService.getStreakData();
+            return {
+              encouragement: challenge.encouragement[lang] || challenge.encouragement.en,
+              educationalTip: challenge.educationalTip[lang] || challenge.educationalTip.en,
+              skillSpecificFeedback: "You already completed today's challenge — great work!",
+              pointsEarned: 10,
+              newStreak: streak.currentStreak,
+              bestStreak: streak.bestStreak,
+              isStreakMilestone: false,
+            };
+          }
+        }
 
         if (res.success && res.submission) {
           // Lock today's assignment in cache
